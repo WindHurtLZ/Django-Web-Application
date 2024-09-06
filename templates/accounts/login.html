@@ -1,0 +1,120 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Sign in</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link href="{% static 'css/vendors/flatpickr.min.css' %}" rel="stylesheet">
+    <link href="{% static 'style.css' %}" rel="stylesheet">
+    <script>
+        if (localStorage.getItem('dark-mode') === 'false' || !('dark-mode' in localStorage)) {
+            document.querySelector('html').classList.remove('dark');
+            document.querySelector('html').style.colorScheme = 'light';
+        } else {
+            document.querySelector('html').classList.add('dark');
+            document.querySelector('html').style.colorScheme = 'dark';
+        }
+    </script>    
+</head>
+
+<body class="font-inter antialiased bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400">
+
+    <script>
+        if (localStorage.getItem('sidebar-expanded') == 'true') {
+            document.querySelector('body').classList.add('sidebar-expanded');
+        } else {
+            document.querySelector('body').classList.remove('sidebar-expanded');
+        }
+    </script>    
+
+    <main class="bg-white dark:bg-slate-900 min-h-screen flex items-center justify-center">
+
+        <div class="relative flex justify-center items-center w-full">
+
+            <!-- Content -->
+            <div class="w-full md:w-1/2">
+
+                <div class="min-h-[100dvh] h-full flex flex-col after:flex-1">
+
+                    <!-- Header -->
+                    <div class="flex-1 flex justify-center items-center">
+
+                        {% if msg %} 
+
+                        <div x-show="open" x-data="{ open: true }" role="alert">
+                            <div class="inline-flex min-w-80 px-4 py-2 rounded-sm text-sm bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-100">
+                                <div class="flex w-full justify-between items-start">
+                                    <div class="flex">
+                                        <svg class="w-4 h-4 shrink-0 fill-current text-rose-500 mt-[3px] mr-3" viewBox="0 0 16 16">
+                                            <path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm3.5 10.1l-1.4 1.4L8 9.4l-2.1 2.1-1.4-1.4L6.6 8 4.5 5.9l1.4-1.4L8 6.6l2.1-2.1 1.4 1.4L9.4 8l2.1 2.1z" />
+                                        </svg>
+                                        <div>{{ msg }}</div>
+                                    </div>
+                                    <button class="dark:text-slate-400 opacity-70 hover:opacity-80 ml-3 mt-[3px]" @click="open = false">
+                                        <div class="sr-only">Close</div>
+                                        <svg class="w-4 h-4 fill-current">
+                                            <path d="M7.95 6.536l4.242-4.243a1 1 0 111.415 1.414L9.364 7.95l4.243 4.242a1 1 0 11-1.415 1.415L7.95 9.364l-4.243 4.243a1 1 0 01-1.414-1.415L6.536 7.95 2.293 3.707a1 1 0 011.414-1.414L7.95 6.536z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% endif %}
+
+                    </div>
+    
+                    <div class="max-w-sm mx-auto w-full px-4 py-8"> 
+
+                        <h1 class="text-3xl text-slate-800 dark:text-slate-100 font-bold mb-6">Enter Credential:</h1>
+
+                        <!-- Form -->
+                        <form method="POST">
+
+                            {% csrf_token %}
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="email">Email Address</label>
+                                    {{ form.username }}
+                                </div>
+                                <span> </span>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1" for="password">Password</label>
+                                    {{ form.password }}
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between mt-6">
+                                <div class="mr-1">
+                                    <a class="text-sm underline hover:no-underline" href="reset-password.html">Forgot Password?</a>
+                                </div>
+                                <button type="submit" class="btn bg-indigo-500 hover:bg-indigo-600 text-white ml-3">Sign In</button>
+                            </div>
+                        </form>
+                        <!-- Footer -->
+                        <div class="pt-5 mt-6 border-t border-slate-200 dark:border-slate-700">
+                            <div class="text-sm">
+                                Create your acccount here: <a class="font-medium text-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400" href="{% url 'register' %}">Sign Up</a>
+                            </div>
+
+                        </div>
+        
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="{% static 'js/vendors/alpinejs.min.js' %}" defer></script>
+    <script src="{% static 'js/main.js' %}"></script>
+
+</body>
+
+</html>
