@@ -1,22 +1,22 @@
 # Python
-*.pyc           # 编译的Python字节码文件
-__pycache__/    # Python缓存文件夹
-*.pyo           # Python优化后的字节码文件
-*.pyd           # Python动态库文件
+*.pyc           # Compile Python Byte File
+__pycache__/    # Python Cache
+*.pyo           
+*.pyd           # Python Dynamic Lib
 
 # Virtual Env
-venv/           # 虚拟环境文件夹
-.env            # 环境变量文件
+venv/           # Virtual Env
+.env            # Env Variable
 
 # IDE
-.vscode/        # VS Code配置文件夹
-.idea/          # PyCharm等IDE的项目配置文件夹
+.vscode/        # VS Code Config
+.idea/          # PyCharm Config
 *.sublime-project
 *.sublime-workspace
 
 # Dump File
-.DS_Store       # macOS系统的文件
-Thumbs.db       # Windows系统的文件
+.DS_Store       # macOS
+Thumbs.db       # Windows
 
 # Log
-*.log           # 日志文件
+*.log           # Log File

@@ -5,7 +5,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title> Dashboard </title>
+    <title> Dashboard - {% block title %} Main {% endblock %}</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <link href="{% static 'css/vendors/flatpickr.min.css' %}" rel="stylesheet">
     <link href="{% static 'style.css' %}" rel="stylesheet">
@@ -25,6 +25,7 @@
     :class="{ 'sidebar-expanded': sidebarExpanded }"
     x-data="{ sidebarOpen: false, sidebarExpanded: localStorage.getItem('sidebar-expanded') == 'true', newDeviceOpen: false }"
     x-init="$watch('sidebarExpanded', value => localStorage.setItem('sidebar-expanded', value))"
+    {% block jscontrol %}{% endblock jscontrol %}
 >
 
     <script>
@@ -38,6 +39,7 @@
     <!-- Page wrapper -->
     <div class="flex h-[100dvh] overflow-hidden">
 
+        {% block sidebar %}
         <!-- Sidebar -->
         <div class="min-w-fit">
             <!-- Sidebar backdrop (mobile only) -->
@@ -68,7 +70,7 @@
                         </svg>
                     </button>
                     <!-- Logo -->
-                    <a class="block" href="index.html">
+                    <a class="block" href="{% url 'home' %}">
                         <img src="{% static 'images/fish.svg' %}" alt="Your Logo" width="200" height="100">
                     </a>
                 </div>
@@ -105,13 +107,13 @@
                                 <div class="lg:hidden lg:sidebar-expanded:block 2xl:block">
                                     <ul class="pl-9 mt-1" :class="open ? '!block' : 'hidden'">
                                         <li class="mb-1 last:mb-0">
-                                            <a class="block text-indigo-500 transition duration-150 truncate" href="index.html">
+                                            <a class="block text-indigo-500 transition duration-150 truncate" href="{% url 'home' %}">
                                                 <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">Main</span>
                                             </a>
                                         </li>
                                         <li class="mb-1 last:mb-0">
-                                            <a class="block text-slate-400 hover:text-slate-200 transition duration-150 truncate" href="analytics.html">
-                                                <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">Pending</span>
+                                            <a class="block text-slate-400 hover:text-slate-200 transition duration-150 truncate" href="{% url 'device' %}">
+                                                <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">Device</span>
                                             </a>
                                         </li>
                                         <li class="mb-1 last:mb-0">
@@ -182,11 +184,15 @@
 
             </div>
         </div>
+        {% endblock sidebar %}
+
 
         <!-- Content area -->
+        {% block content %}
         <div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
 
             <!-- Site header -->
+            {% block sidehead %}
             <header class="sticky top-0 bg-white dark:bg-[#182235] border-b border-slate-200 dark:border-slate-700 z-30">
                 <div class="px-4 sm:px-6 lg:px-8">
                     <div class="flex items-center justify-between h-16 -mb-px">
@@ -238,7 +244,7 @@
                                     class="inline-flex justify-center items-center group"
                                     aria-haspopup="true"
                                     @click.prevent="open = !open"
-                                    :aria-expanded="open"                        
+                                    :aria-expanded="open"
                                 >
                                     <img class="w-8 h-8 rounded-full" src="{% static 'images/fish.svg' %}" width="32" height="32" alt="User" />
                                     <div class="flex items-center truncate">
@@ -249,7 +255,7 @@
                                     </div>
                                 </button>
                                 <div
-                                    class="origin-top-right z-10 absolute top-full right-0 min-w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-1.5 rounded shadow-lg overflow-hidden mt-1"                
+                                    class="origin-top-right z-10 absolute top-full right-0 min-w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-1.5 rounded shadow-lg overflow-hidden mt-1"
                                     @click.outside="open = false"
                                     @keydown.escape.window="open = false"
                                     x-show="open"
@@ -259,7 +265,7 @@
                                     x-transition:leave="transition ease-out duration-200"
                                     x-transition:leave-start="opacity-100"
                                     x-transition:leave-end="opacity-0"
-                                    x-cloak                    
+                                    x-cloak
                                 >
                                     <div class="pt-0.5 pb-2 px-3 mb-1 border-b border-slate-200 dark:border-slate-700">
                                         <div class="font-medium text-slate-800 dark:text-slate-100">CMPEN 482W Capstone Project</div>
@@ -275,9 +281,9 @@
                                                 <button type="submit" class="font-medium text-sm text-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center py-1 px-3" @click="open = false" @focus="open = true" @focusout="open = false">
                                                     Sign Out
                                                 </button>
-                                            </form>    
+                                            </form>
                                         </li>
-                                    </ul>                
+                                    </ul>
                                 </div>
                             </div>
 
@@ -286,7 +292,9 @@
                     </div>
                 </div>
             </header>
-            
+            {% endblock sidehead %}
+
+            {% block canvas %}
             <main class="grow">
                 <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
 
@@ -325,9 +333,9 @@
                                 </div>
                             </div>
 
-                            <!-- Add view button -->
+                            <!-- Add device button -->
                             <button
-                                @click="newDeviceOpen = true" 
+                                @click="newDeviceOpen = true"
                                 class="btn bg-indigo-500 hover:bg-indigo-600 text-white">
                                 <svg class="w-4 h-4 fill-current opacity-50 shrink-0" viewBox="0 0 16 16">
                                     <path d="M15 7H9V1c0-.6-.4-1-1-1S7 .4 7 1v6H1c-.6 0-1 .4-1 1s.4 1 1 1h6v6c0 .6.4 1 1 1s1-.4 1-1V9h6c.6 0 1-.4 1-1s-.4-1-1-1z" />
@@ -340,6 +348,7 @@
                     </div>
 
                     <!-- Cards -->
+                    {% block card %}
                     <div class="grid grid-cols-12 gap-6">
 
                         <!-- Line chart (Acme Plus) -->
@@ -383,20 +392,23 @@
                         </div>
 
                     </div>
-
+                    {% endblock card %}
+                        
                 </div>
             </main>
+            {% endblock canvas %}
 
         </div>
+        {% endblock content %}
 
     </div>
 
     <!-- New Device Slide Over Panel -->
     <div class="fixed inset-0 z-50 flex justify-end" x-show="newDeviceOpen" @keydown.escape.window="newDeviceOpen = false"
-        x-transition:enter="transition ease-in-out duration-500" 
-        x-transition:enter-start="opacity-0 transform translate-x-full" 
+        x-transition:enter="transition ease-in-out duration-500"
+        x-transition:enter-start="opacity-0 transform translate-x-full"
         x-transition:enter-end="opacity-100 transform translate-x-0"
-        x-transition:leave="transition ease-in-out duration-500" 
+        x-transition:leave="transition ease-in-out duration-500"
         x-transition:leave-start="opacity-100 transform translate-x-0"
         x-transition:leave-end="opacity-0 transform translate-x-full"
         x-cloak>
@@ -439,12 +451,12 @@
 
     <script src="{% static 'js/vendors/alpinejs.min.js' %}" defer></script>
     <script src="{% static 'js/main.js' %}"></script>
-    <!-- <script src="{% static 'js/vendors/chart.js' %}"></script> -->
-    <!-- <script src="{% static 'js/vendors/moment.js' %}"></script> -->
-    <!-- <script src="{% static 'js/vendors/chartjs-adapter-moment.js' %}"></script> -->
-    <!-- <script src="{% static 'js/dashboard-charts.js' %}"></script> -->
-    <!-- <script src="{% static 'js/vendors/flatpickr.js' %}"></script> -->
-    <!-- <script src="{% static 'js/flatpickr-init.js' %}"></script> -->
+    <script src="{% static 'js/vendors/chart.js' %}"></script>
+    <script src="{% static 'js/vendors/moment.js' %}"></script>
+    <script src="{% static 'js/vendors/chartjs-adapter-moment.js' %}"></script>
+    <script src="{% static 'js/dashboard-charts.js' %}"></script>
+    <script src="{% static 'js/vendors/flatpickr.js' %}"></script>
+    <script src="{% static 'js/flatpickr-init.js' %}"></script>
 
 </body>
 
