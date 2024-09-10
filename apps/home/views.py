@@ -25,7 +25,6 @@ def device(request):
 
     return render(request, 'home/device.html', context)
 
-
 @login_required(login_url="/login/")
 def add_device(request):
     if request.method == 'POST':
@@ -39,3 +38,13 @@ def add_device(request):
         form = DeviceForm()
 
     return render(request, 'home/device.html', {'form': form})
+
+@login_required(login_url="/login/")
+def delete_device(request):
+    if request.method == 'POST':
+        device_ids = request.POST.get('device_ids')
+        if device_ids:
+            device_ids_list = device_ids.split(',')
+            devices_to_delete = Device.objects.filter(id__in=device_ids_list, owner=request.user)
+            devices_to_delete.delete()
+    return redirect('device')

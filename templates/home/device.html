@@ -21,7 +21,14 @@
                 <div class="table-items-action hidden">
                     <div class="flex items-center">
                         <div class="hidden xl:block text-sm italic mr-2 whitespace-nowrap"><span class="table-items-count"></span> items selected</div>
-                        <button class="btn bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-rose-500">Delete</button>
+                        <form id="delete-form" method="POST" action="{% url 'delete_device' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="device_ids" id="device-ids-input">
+                            <button type="button" class="btn bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-rose-500" 
+                                onclick="submitDeleteForm()">
+                                Delete
+                            </button>
+                        </form>
                     </div>
                 </div>
 
@@ -138,7 +145,7 @@
                     </button>
                 </div>
 
-                <!-- Add order button -->
+                <!-- Add Device button -->
                 <button
                     @click="newDeviceOpen = true"
                     class="btn bg-indigo-500 hover:bg-indigo-600 text-white">
@@ -211,7 +218,7 @@
                                     <div class="flex items-center">
                                         <label class="inline-flex">
                                             <span class="sr-only">Select</span>
-                                            <input class="table-item form-checkbox" type="checkbox" @click="uncheckParent" />
+                                            <input class="table-item form-checkbox" type="checkbox" value="{{ device.id }}" @click="uncheckParent" />
                                         </label>
                                     </div>
                                 </td>
@@ -304,6 +311,15 @@
                     }
                 }))
             })
+            
+            // delete function
+            function submitDeleteForm() {
+                var checkboxes = document.querySelectorAll('input.table-item:checked');
+                var ids = Array.from(checkboxes).map(checkbox => checkbox.value); // get device ID
+                document.getElementById('device-ids-input').value = ids.join(','); // separate by , to form input
+            
+                document.getElementById('delete-form').submit();
+            }
         </script>
 
         <!-- Pagination -->
