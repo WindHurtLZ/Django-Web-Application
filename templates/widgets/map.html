@@ -3,6 +3,19 @@
 {% block load %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        #map {
+            height: 600px;
+        }
+        .btn {
+            padding: 10px;
+            background-color: blue;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
 {% endblock load %}
 
 {% block canvas %}
@@ -58,25 +71,99 @@
 
         </div>
 
+        <div style="margin-bottom: 10px;">
+            <button class="btn" onclick="goToCurrentLocation()">Go to Current Location</button>
+        </div>
+
         <!-- Map Container-->
-        <div id="map" style="height: 1000px;"></div>
+        <div id="map"></div>
 
     </div>
 </main>
 
 <script>
-    // Initialize the map
-    var map = L.map('map').setView([37.7749, -122.4194], 13);  // Initial map center (San Francisco, you can change it)
-
-    // Load a tile layer
+    var map = L.map('map').setView([40.798224, -77.857236], 13);  // 默认位置
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Add markers for each device
-    {% for device in devices %}
-    var marker = L.marker([{{ device.latitude }}, {{ device.longitude }}]).addTo(map);
-    marker.bindPopup("<b>{{ device.name }}</b><br>{{ device.location }}").openPopup();
-    {% endfor %}
+    // Get Current Location
+    var currentLocationMarker = null;
+    function goToCurrentLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+                
+                map.setView([lat, lng], 13);  // move view
+                if (!currentLocationMarker) {
+                    currentLocationMarker = L.marker([lat, lng]).addTo(map).bindPopup("You are here").openPopup();
+                } else {
+                    currentLocationMarker.setLatLng([lat, lng]).openPopup();
+                }
+            }, function () {
+                alert("Unable to retrieve your location");
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    }
+
+    var deviceMarkers = {}; // Store Marker by device ID
+    // Render all device to the maps
+    var devices = {{ devices|safe }};
+    devices.forEach(function(device) {
+        var deviceLat = device.latitude;
+        var deviceLng = device.longitude;
+
+        // add marker to each device
+        if (deviceLat !== 'null' && deviceLng !== 'null') {
+            var marker = L.marker([deviceLat, deviceLng]).addTo(map)
+                .bindPopup(`<b>${device.name}</b><br>Click to see path`)
+                .on('click', function () {
+                    drawDevicePath(device.id);  // draw device path after click marker
+                });
+            deviceMarkers[device.id] = marker;
+        }
+    });
+
+    // draw device function
+    function drawDevicePath(deviceId) {
+        fetch(`/device-path/${deviceId}/`)  // provide path
+            .then(response => response.json())
+            .then(data => {
+                var pathCoordinates = data.map(function(point) {
+                    return [point.latitude, point.longitude];
+                });
+
+                // Remove old path and draw new path
+                if (deviceMarkers[deviceId].polyline) {
+                    map.removeLayer(deviceMarkers[deviceId].polyline);
+                }
+                deviceMarkers[deviceId].polyline = L.polyline(pathCoordinates, { color: 'blue' }).addTo(map);
+                map.fitBounds(deviceMarkers[deviceId].polyline.getBounds());  // Zoom to path
+            })
+            .catch(error => console.error("Error fetching device path:", error));
+    }
+    
+    // Polling function to update all devices' latest positions
+    function updateDevicePositions() {
+        fetch('/api/devices-locations/')  // Assuming you have an endpoint that returns the latest locations
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(function(device) {
+                    // Update marker positions
+                    if (deviceMarkers[device.id]) {
+                        var marker = deviceMarkers[device.id];
+                        var newLatLng = new L.LatLng(device.latitude, device.longitude);
+                        marker.setLatLng(newLatLng);  // Update marker position
+                    }
+                });
+            })
+            .catch(error => console.error('Error updating device positions:', error));
+    }
+    
+    // Polling for device position updates every 5 seconds
+    setInterval(updateDevicePositions, 5000);
 </script>
 {% endblock canvas %}
