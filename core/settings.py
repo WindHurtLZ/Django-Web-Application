@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'apps.home.apps.HomeConfig',
     'apps.widgets.apps.WidgetsConfig',
+    'apps.mock.apps.MockConfig',
 ]
 
 MIDDLEWARE = [
