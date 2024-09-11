@@ -74,6 +74,9 @@
         <div style="margin-bottom: 10px;">
             <button class="btn" onclick="goToCurrentLocation()">Go to Current Location</button>
         </div>
+        <div style="margin-bottom: 10px;">
+            <button id="simulate-btn" class="btn" onclick="toggleSimulation()">Start Simulation</button>
+        </div>
 
         <!-- Map Container-->
         <div id="map"></div>
@@ -86,6 +89,11 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
+
+    // Current tracking device
+    var activeDeviceId = null;
+    var trackPathInterval = null;
+    var globalUpdateInterval = null;
 
     // Get Current Location
     var currentLocationMarker = null;
@@ -121,18 +129,49 @@
             var marker = L.marker([deviceLat, deviceLng]).addTo(map)
                 .bindPopup(`<b>${device.name}</b><br>Click to see path`)
                 .on('click', function () {
-                    drawDevicePath(device.id);  // draw device path after click marker
+                    if (activeDeviceId !== device.id) {
+                        // Stop tracking the previous device's path
+                        stopPathTracking();
+                        // Start tracking the selected device's path
+                        activeDeviceId = device.id;
+                        startPathTracking(activeDeviceId);  // Begin tracking this device
+                    } else {
+                        stopPathTracking();  // Stop tracking if clicked again
+                    }
                 });
             deviceMarkers[device.id] = marker;
         }
     });
 
+    // start tracking func
+    function startPathTracking(deviceId) {
+        console.log(`Start tracking device ${deviceId}`);
+        activeDeviceId = deviceId;
+        clearInterval(globalUpdateInterval);
+        updateDevicePositions();
+        drawDevicePath(deviceId);
+        trackPathInterval = setInterval(function () {
+            updateDevicePositions();
+            drawDevicePath(deviceId);  // Update the path in real-time
+        }, 5000);  // update every 5s
+    }
+
+    // stop tracking func
+    function stopPathTracking() {
+        if (activeDeviceId !== null) {
+            console.log(`Stop tracking device ${activeDeviceId}`);
+            // stop
+            clearInterval(trackPathInterval);
+            activeDeviceId = null;
+        }
+    }
+
     // draw device function
     function drawDevicePath(deviceId) {
-        fetch(`/device-path/${deviceId}/`)  // provide path
+        fetch(`/device-path/${deviceId}/?full_path=true`)  // provide path
             .then(response => response.json())
             .then(data => {
-                var pathCoordinates = data.map(function(point) {
+                var pathCoordinates = data.path.map(function(point) {
                     return [point.latitude, point.longitude];
                 });
 
@@ -145,25 +184,58 @@
             })
             .catch(error => console.error("Error fetching device path:", error));
     }
-    
+
     // Polling function to update all devices' latest positions
     function updateDevicePositions() {
-        fetch('/api/devices-locations/')  // Assuming you have an endpoint that returns the latest locations
-            .then(response => response.json())
-            .then(data => {
-                data.forEach(function(device) {
-                    // Update marker positions
+        devices.forEach(function(device) {
+            fetch(`/device-path/${device.id}/`)  // Reusing device path API to get the latest position
+                .then(response => response.json())
+                .then(data => {
                     if (deviceMarkers[device.id]) {
+                        console.log('Devices location update successfully.');
                         var marker = deviceMarkers[device.id];
-                        var newLatLng = new L.LatLng(device.latitude, device.longitude);
-                        marker.setLatLng(newLatLng);  // Update marker position
+                        var newLatLng = new L.LatLng(data.latitude, data.longitude);
+                        marker.setLatLng(newLatLng);  // Update the marker position
                     }
-                });
-            })
-            .catch(error => console.error('Error updating device positions:', error));
+                })
+                .catch(error => console.error('Error updating device positions:', error));
+        });
     }
     
     // Polling for device position updates every 5 seconds
-    setInterval(updateDevicePositions, 5000);
+    globalUpdateInterval = setInterval(updateDevicePositions, 5000);
+
+    // ---------------- TEST PURPOSE ----------------
+    var isSimulating = false;  // To track the simulation state
+    var simulateInterval = null;  // To store the interval ID
+
+    function toggleSimulation() {
+        var simulateBtn = document.getElementById("simulate-btn");
+
+        if (isSimulating) {
+            // Stop the simulation
+            clearInterval(simulateInterval);  // Stop the interval
+            simulateBtn.textContent = "Start Simulation";
+            isSimulating = false;
+        } else {
+            // Start the simulation
+            simulateInterval = setInterval(simulateDeviceMovement, 5000);  // Polling every 5 seconds
+            simulateBtn.textContent = "Stop Simulation";
+            isSimulating = true;
+        }
+    }
+
+    // Polling function to simulate device movement every 5 seconds
+    function simulateDeviceMovement() {
+        fetch('/simulate-device-movement/')  // call API
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    console.log('Devices moved successfully.');
+                }
+            })
+            .catch(error => console.error('Error simulating device movement:', error));
+    }
+
 </script>
 {% endblock canvas %}

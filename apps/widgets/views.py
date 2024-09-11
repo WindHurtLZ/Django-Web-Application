@@ -30,5 +30,19 @@ def device_map(request):
 
 def device_path(request, device_id):
     paths = Map.objects.filter(device_id=device_id).order_by('timestamp')
-    path_data = [{'latitude': path.latitude, 'longitude': path.longitude} for path in paths]
-    return JsonResponse(path_data, safe=False)
+    # if paths exist，return latest position
+    if paths.exists():
+        latest_position = {
+            'latitude': paths.last().latitude,
+            'longitude': paths.last().longitude
+        }
+    else:
+        latest_position = {'latitude': None, 'longitude': None}
+
+    # check full path parameter
+    if 'full_path' in request.GET:
+        path_data = [{'latitude': path.latitude, 'longitude': path.longitude} for path in paths]
+        return JsonResponse({'path': path_data, 'latest_position': latest_position}, safe=False)
+
+    # return latest position default
+    return JsonResponse(latest_position, safe=False)
