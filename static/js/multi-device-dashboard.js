@@ -41,19 +41,19 @@ const initializeDeviceCharts = () => {
 
       // 平滑车速波动函数
       const generateSpeed = (prevValue) => {
-          const delta = (Math.random() - 0.5) * 10;  // 让车速在前值的基础上上下浮动（-10到+10）
+          const delta = (Math.random() - 0.5) * 20;  // +- 10 mph
           let newValue = prevValue + delta;
-          if (newValue > 120) newValue = 120;  // 保证车速不超过 120
-          if (newValue < 0) newValue = 0;  // 保证车速不低于 0
+          if (newValue > 120) newValue = 120;  // maximum 120
+          if (newValue < 0) newValue = 0;  // minimum 0
           return newValue;
       };
 
       // Fake real-time data
-      let data = [];  // 初始化一个空数组来存储平滑车速数据
-      let initialSpeed = Math.random() * 120;  // 设置第一个初始车速值
+      let data = [];  // pre initial data
+      let initialSpeed = Math.random() * 120;  // set first data
       for (let i = 0; i < 50; i++) {
-          initialSpeed = generateSpeed(initialSpeed);  // 使用平滑函数生成后续车速
-          data.push(initialSpeed);  // 将生成的车速数据添加到数组中
+          initialSpeed = generateSpeed(initialSpeed);  // initialized 50 mock data
+          data.push(initialSpeed);  // add data
       }
 
       // Fake real-time labels
@@ -80,7 +80,7 @@ const initializeDeviceCharts = () => {
                   {
                       data: slicedData,
                       fill: true,
-                      backgroundColor: `rgba(${hexToRGB('#3b82f6')}, 0.08)`,
+                      backgroundColor: `rgba(${hexToRGB('#3b82f6')}, 0.05)`,
                       borderColor: '#6366f1',
                       borderWidth: 2,
                       tension: 0,
@@ -96,7 +96,11 @@ const initializeDeviceCharts = () => {
           },
           options: {
               layout: {
-                  padding: 20,
+                  padding: {
+                      left: 10,
+                      right: 10,
+                      bottom: 0,
+                  }
               },
               scales: {
                   y: {
@@ -168,7 +172,7 @@ const initializeDeviceCharts = () => {
       const chartDeviation = device.querySelector('[data-device-deviation]');
 
       const adddata = (prev) => {
-          const newValue = generateSpeed(prev);  // 生成平滑波动的新车速
+          const newValue = generateSpeed(prev);
           const {datasets} = chart.data;
           chart.data.labels.shift();
           chart.data.labels.push(new Date());
@@ -177,11 +181,11 @@ const initializeDeviceCharts = () => {
           chart.update(0);
 
           if (!chartValue) return;
-          const diff = ((newValue - prev) / prev) * 100;
+          const diff = newValue - prev;
           chartValue.innerHTML = newValue.toFixed(2);
           if (!chartDeviation) return;
-          chartDeviation.style.backgroundColor = diff < 0 ? '#f59e0b' : '#10b981';
-          chartDeviation.innerHTML = `${diff > 0 ? '+' : ''}${diff.toFixed(2)}%`;
+          chartDeviation.style.backgroundColor = newValue > 40 ? (newValue > 80 ? '#ff3d00' : '#f59e0b') : '#10b981';
+          chartDeviation.innerHTML = `${newValue > 40 ? `${newValue > 80 ? 'Over Speed' : 'Danger'}` : 'Safe'}`;
           return newValue;
       };
 

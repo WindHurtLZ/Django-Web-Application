@@ -162,7 +162,7 @@
         <!-- Table -->
         <div class="bg-white dark:bg-slate-800 shadow-lg rounded-sm border border-slate-200 dark:border-slate-700 mb-8">
             <header class="px-5 py-4">
-                <h2 class="font-semibold text-slate-800 dark:text-slate-100">All Devices <span class="text-slate-400 dark:text-slate-500 font-medium">2</span></h2>
+                <h2 class="font-semibold text-slate-800 dark:text-slate-100">All Devices <span class="text-slate-400 dark:text-slate-500 font-medium">{{ devices|length }}</span></h2>
             </header>
             <div x-data="handleSelect">
 
@@ -210,9 +210,9 @@
                             </tr>
                         </thead>
                         <!-- Table body -->
+                        {% for device in devices %}
                         <tbody class="text-sm" x-data="{ open: false }">
                             <!-- Row -->
-                            {% for device in devices %}
                             <tr>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
                                     <div class="flex items-center">
@@ -253,7 +253,7 @@
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
                                     <div class="flex items-center">
-                                        <button class="text-slate-400 hover:text-slate-500 dark:text-slate-500 dark:hover:text-slate-400 transform" :class="{ 'rotate-180': open }" @click.prevent="open = !open" :aria-expanded="open" aria-controls="description-01">
+                                        <button class="text-slate-400 hover:text-slate-500 dark:text-slate-500 dark:hover:text-slate-400 transform" :class="{ 'rotate-180': open }" @click.prevent="open = !open" :aria-expanded="open" aria-controls="description-{{ device.id }}">
                                             <span class="sr-only">Menu</span>
                                             <svg class="w-8 h-8 fill-current" viewBox="0 0 32 32">
                                                 <path d="M16 20l-5.4-5.4 1.4-1.4 4 4 4-4 1.4 1.4z" />
@@ -263,7 +263,7 @@
                                 </td>
                             </tr>
 
-                            <tr id="description-01" role="region" x-show="open" x-cloak>
+                            <tr id="description-{{ device.id }}" role="region" x-show="open" x-cloak>
                                 <td colspan="10" class="px-2 first:pl-5 last:pr-5 py-3">
                                     <div class="flex items-center bg-slate-50 dark:bg-slate-900/30 dark:text-slate-400 p-3 -mt-3">
                                         <svg class="w-4 h-4 shrink-0 fill-current text-slate-400 dark:text-slate-500 mr-2">
@@ -273,9 +273,8 @@
                                     </div>
                                 </td>
                             </tr>
-                            {% endfor %}
                         </tbody>
-
+                        {% endfor %}
                     </table>
 
                 </div>
