@@ -21,4 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include("apps.auth.urls")),
     path('', include("apps.home.urls")),
+    path('', include("apps.widgets.urls")),
+    path('', include("apps.mock.urls")),
 ]

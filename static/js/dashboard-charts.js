@@ -15,12 +15,9 @@ const hexToRGB = (h) => {
   return `${+r},${+g},${+b}`;
 };
 
-const formatValue = (value) => Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumSignificantDigits: 3,
-  notation: 'compact',
-}).format(value);
+const formatValue = (value) => {
+  return `${value.toFixed(0)}`;  // 格式化为带有 km/h 的车速
+};
 
 // Define Chart.js default settings
 Chart.defaults.font.family = '"Inter", sans-serif';

@@ -10,7 +10,7 @@ class Device(models.Model):
     ]
 
     name = models.CharField(max_length=100)
-    date = models.DateField(autonow_add=True)
+    date = models.DateField(auto_now_add=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     version = models.CharField(max_length=50)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')

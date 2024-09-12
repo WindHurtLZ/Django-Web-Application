@@ -21,7 +21,14 @@
                 <div class="table-items-action hidden">
                     <div class="flex items-center">
                         <div class="hidden xl:block text-sm italic mr-2 whitespace-nowrap"><span class="table-items-count"></span> items selected</div>
-                        <button class="btn bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-rose-500">Delete</button>
+                        <form id="delete-form" method="POST" action="{% url 'delete_device' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="device_ids" id="device-ids-input">
+                            <button type="button" class="btn bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-rose-500" 
+                                onclick="submitDeleteForm()">
+                                Delete
+                            </button>
+                        </form>
                     </div>
                 </div>
 
@@ -138,7 +145,7 @@
                     </button>
                 </div>
 
-                <!-- Add order button -->
+                <!-- Add Device button -->
                 <button
                     @click="newDeviceOpen = true"
                     class="btn bg-indigo-500 hover:bg-indigo-600 text-white">
@@ -205,41 +212,43 @@
                         <!-- Table body -->
                         <tbody class="text-sm" x-data="{ open: false }">
                             <!-- Row -->
+                            {% for device in devices %}
                             <tr>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
                                     <div class="flex items-center">
                                         <label class="inline-flex">
                                             <span class="sr-only">Select</span>
-                                            <input class="table-item form-checkbox" type="checkbox" @click="uncheckParent" />
+                                            <input class="table-item form-checkbox" type="checkbox" value="{{ device.id }}" @click="uncheckParent" />
                                         </label>
                                     </div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
                                     <div class="flex items-center text-slate-800">
-                                        <div class="font-medium text-sky-500">Pending</div>
+                                        <div class="font-medium text-sky-500">{{ device.name }}</div>
                                     </div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div>09/09/2024</div>
+                                    <div>{{ device.date }}</div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="font-medium text-slate-800 dark:text-slate-100">Somebody</div>
+                                    <div class="font-medium text-slate-800 dark:text-slate-100">{{ device.owner }}</div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="text-left font-medium text-emerald-500">12.4.5</div>
+                                    <div class="text-left font-medium text-emerald-500">{{ device.version }}</div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="inline-flex font-medium bg-amber-100 dark:bg-amber-400/30 text-amber-600 dark:text-amber-400 rounded-full text-center px-2.5 py-0.5">Inactive</div>
+                                    <div class="inline-flex font-medium bg-amber-100 dark:bg-amber-400/30 text-amber-600 dark:text-amber-400 rounded-full text-center px-2.5 py-0.5">
+                                        {{ device.status }}</div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="text-center">99%</div>
+                                    <div class="text-center">{{ device.battery }}</div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="text-left">State College</div>
+                                    <div class="text-left">{{ device.location }}</div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
                                     <div class="flex items-center">
-                                        <div>Gateway</div>
+                                        <div>{{ device.type }}</div>
                                     </div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
@@ -253,83 +262,20 @@
                                     </div>
                                 </td>
                             </tr>
-                            <!--
-                            Example of content revealing when clicking the button on the right side:
-                            Note that you must set a "colspan" attribute on the <td> element,
-                            and it should match the number of columns in your table
-                            -->
+
                             <tr id="description-01" role="region" x-show="open" x-cloak>
                                 <td colspan="10" class="px-2 first:pl-5 last:pr-5 py-3">
                                     <div class="flex items-center bg-slate-50 dark:bg-slate-900/30 dark:text-slate-400 p-3 -mt-3">
                                         <svg class="w-4 h-4 shrink-0 fill-current text-slate-400 dark:text-slate-500 mr-2">
                                             <path d="M1 16h3c.3 0 .5-.1.7-.3l11-11c.4-.4.4-1 0-1.4l-3-3c-.4-.4-1-.4-1.4 0l-11 11c-.2.2-.3.4-.3.7v3c0 .6.4 1 1 1zm1-3.6l10-10L13.6 4l-10 10H2v-1.6z" />
                                         </svg>
-                                        <div class="italic">Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
+                                        <div class="italic"> Some here ? </div>
                                     </div>
                                 </td>
                             </tr>
+                            {% endfor %}
                         </tbody>
-                        <tbody class="text-sm" x-data="{ open: false }">
-                            <!-- Row -->
-                            <tr>
-                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
-                                    <div class="flex items-center">
-                                        <label class="inline-flex">
-                                            <span class="sr-only">Select</span>
-                                            <input class="table-item form-checkbox" type="checkbox" @click="uncheckParent" />
-                                        </label>
-                                    </div>
-                                </td>
-                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="flex items-center text-slate-800">
-                                        <div class="font-medium text-sky-500">NIHAOAi</div>
-                                    </div>
-                                </td>
-                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div>Data </div>
-                                </td>
-                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="font-medium text-slate-800 dark:text-slate-100">User</div>
-                                </td>
-                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="text-left font-medium text-emerald-500">39082</div>
-                                </td>
-                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="inline-flex font-medium bg-emerald-100 dark:bg-emerald-400/30 text-emerald-600 dark:text-emerald-400 rounded-full text-center px-2.5 py-0.5">Active</div>
-                                </td>
-                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="text-center">2%</div>
-                                </td>
-                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="text-left">Mexico City</div>
-                                </td>
-                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="flex items-center">
-                                        <div>Sensor</div>
-                                    </div>
-                                </td>
-                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
-                                    <div class="flex items-center">
-                                        <button class="text-slate-400 hover:text-slate-500 dark:text-slate-500 dark:hover:text-slate-400 transform" :class="{ 'rotate-180': open }" @click.prevent="open = !open" :aria-expanded="open" aria-controls="description-02">
-                                            <span class="sr-only">Menu</span>
-                                            <svg class="w-8 h-8 fill-current" viewBox="0 0 32 32">
-                                                <path d="M16 20l-5.4-5.4 1.4-1.4 4 4 4-4 1.4 1.4z" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr id="description-02" role="region" x-show="open" x-cloak>
-                                <td colspan="10" class="px-2 first:pl-5 last:pr-5 py-3">
-                                    <div class="flex items-center bg-slate-50 dark:bg-slate-900/30 dark:text-slate-400 p-3 -mt-3">
-                                        <svg class="w-4 h-4 shrink-0 fill-current text-slate-400 dark:text-slate-500 mr-2">
-                                            <path d="M1 16h3c.3 0 .5-.1.7-.3l11-11c.4-.4.4-1 0-1.4l-3-3c-.4-.4-1-.4-1.4 0l-11 11c-.2.2-.3.4-.3.7v3c0 .6.4 1 1 1zm1-3.6l10-10L13.6 4l-10 10H2v-1.6z" />
-                                        </svg>
-                                        <div class="italic">May be we can do something here</div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
+
                     </table>
 
                 </div>
@@ -365,6 +311,15 @@
                     }
                 }))
             })
+            
+            // delete function
+            function submitDeleteForm() {
+                var checkboxes = document.querySelectorAll('input.table-item:checked');
+                var ids = Array.from(checkboxes).map(checkbox => checkbox.value); // get device ID
+                document.getElementById('device-ids-input').value = ids.join(','); // separate by , to form input
+            
+                document.getElementById('delete-form').submit();
+            }
         </script>
 
         <!-- Pagination -->

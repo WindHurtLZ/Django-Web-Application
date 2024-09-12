@@ -1,0 +1,239 @@
+{% extends 'layouts/base.html' %}
+
+{% block load %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        html, body, #map {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .leaflet-control-custom i {
+            line-height: 30px;
+            font-size: 18px;
+        }
+        .btn {
+            padding: 10px;
+            background-color: blue;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000; /* Ensure it's above the map */
+        }
+        /* Position the simulation button at the bottom left of the map */
+        .simulate-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+    </style>
+{% endblock load %}
+
+{% block canvas %}
+<main class="grow" style="height: 100vh; padding: 0; margin: 0;">
+    <div style="position: relative; height: 100%;">
+        <!-- Simulation Button -->
+        <button id="simulate-btn" class="btn simulate-btn" onclick="toggleSimulation()">Start Simulation</button>
+
+        <!-- Map Container -->
+        <div id="map"></div>
+    </div>
+</main>
+
+<script>
+    var map = L.map('map').setView([40.798224, -77.857236], 13);  // 默认位置
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Custom Control Button
+    var locateControl = L.Control.extend({
+        options: { position: 'topright' },  //
+
+        onAdd: function(map) {
+            var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+
+            // add icon Unicode
+            container.innerHTML = '<i class="fas fa-location-arrow"></i>';
+            container.style.backgroundColor = 'white';
+            container.style.width = '30px';
+            container.style.height = '30px';
+            container.style.cursor = 'pointer';
+            container.style.textAlign = 'center';
+            container.style.lineHeight = '30px';
+            container.style.fontSize = '20px';
+
+            container.onclick = function(){
+                goToCurrentLocation();
+            };
+
+            return container;
+        }
+    });
+    map.addControl(new locateControl());
+
+    // Current tracking device
+    var activeDeviceId = null;
+    var trackPathInterval = null;
+    var globalUpdateInterval = null;
+
+    // Get Current Location
+    var currentLocationMarker = null;
+    function goToCurrentLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+                
+                map.setView([lat, lng], 13);  // move view
+                if (!currentLocationMarker) {
+                    currentLocationMarker = L.marker([lat, lng]).addTo(map).bindPopup("You are here").openPopup();
+                } else {
+                    currentLocationMarker.setLatLng([lat, lng]).openPopup();
+                }
+            }, function () {
+                alert("Unable to retrieve your location");
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    }
+
+    var deviceMarkers = {}; // Store Marker by device ID
+    // Render all device to the maps
+    var devices = {{ devices|safe }};
+    devices.forEach(function(device) {
+        var deviceLat = device.latitude;
+        var deviceLng = device.longitude;
+
+        // add marker to each device
+        if (deviceLat !== 'null' && deviceLng !== 'null') {
+            var marker = L.marker([deviceLat, deviceLng]).addTo(map)
+                .bindPopup(`<b>${device.name}</b><br>Click anywhere to stop track`)
+                .on('click', function () {
+                    if (activeDeviceId !== device.id) {
+                        // Stop tracking the previous device's path
+                        stopPathTracking();
+                        // Start tracking the selected device's path
+                        activeDeviceId = device.id;
+                        startPathTracking(activeDeviceId);  // Begin tracking this device
+                    }
+                });
+            deviceMarkers[device.id] = marker;
+        }
+    });
+
+    // Click on the map to stop tracking
+    map.on('click', function () {
+        stopPathTracking();  // Stop path tracking when clicking on the map
+    });
+
+    // start tracking func
+    function startPathTracking(deviceId) {
+        console.log(`Start tracking device ${deviceId}`);
+        activeDeviceId = deviceId;
+        clearInterval(globalUpdateInterval);
+        updateDevicePositions();
+        drawDevicePath(deviceId);
+        trackPathInterval = setInterval(function () {
+            updateDevicePositions();
+            drawDevicePath(deviceId);  // Update the path in real-time
+        }, 5000);  // update every 5s
+    }
+
+    // stop tracking func
+    function stopPathTracking() {
+        if (activeDeviceId !== null) {
+            console.log(`Stop tracking device ${activeDeviceId}`);
+            // stop
+            clearInterval(trackPathInterval);
+
+            // Remove path if exists
+            if (deviceMarkers[activeDeviceId].polyline) {
+                map.removeLayer(deviceMarkers[activeDeviceId].polyline);
+                deviceMarkers[activeDeviceId].polyline = null;
+            }
+
+            activeDeviceId = null;
+            // Restart global update interval
+            globalUpdateInterval = setInterval(updateDevicePositions, 5000);
+        }
+    }
+
+    // draw device function
+    function drawDevicePath(deviceId) {
+        fetch(`/device-path/${deviceId}/?full_path=true`)  // provide path
+            .then(response => response.json())
+            .then(data => {
+                var pathCoordinates = data.path.map(function(point) {
+                    return [point.latitude, point.longitude];
+                });
+
+                // Remove old path and draw new path
+                if (deviceMarkers[deviceId].polyline) {
+                    map.removeLayer(deviceMarkers[deviceId].polyline);
+                }
+                deviceMarkers[deviceId].polyline = L.polyline(pathCoordinates, { color: 'blue' }).addTo(map);
+                map.fitBounds(deviceMarkers[deviceId].polyline.getBounds());  // Zoom to path
+            })
+            .catch(error => console.error("Error fetching device path:", error));
+    }
+
+    // Polling function to update all devices' latest positions
+    function updateDevicePositions() {
+        devices.forEach(function(device) {
+            fetch(`/device-path/${device.id}/`)  // Reusing device path API to get the latest position
+                .then(response => response.json())
+                .then(data => {
+                    if (deviceMarkers[device.id]) {
+                        console.log('Devices location update successfully.');
+                        var marker = deviceMarkers[device.id];
+                        var newLatLng = new L.LatLng(data.latitude, data.longitude);
+                        marker.setLatLng(newLatLng);  // Update the marker position
+                    }
+                })
+                .catch(error => console.error('Error updating device positions:', error));
+        });
+    }
+    
+    // Polling for device position updates every 5 seconds
+    globalUpdateInterval = setInterval(updateDevicePositions, 5000);
+
+    // ---------------- TEST PURPOSE ----------------
+    var isSimulating = false;  // To track the simulation state
+    var simulateInterval = null;  // To store the interval ID
+
+    function toggleSimulation() {
+        var simulateBtn = document.getElementById("simulate-btn");
+
+        if (isSimulating) {
+            // Stop the simulation
+            clearInterval(simulateInterval);  // Stop the interval
+            simulateBtn.textContent = "Start Simulation";
+            isSimulating = false;
+        } else {
+            // Start the simulation
+            simulateInterval = setInterval(simulateDeviceMovement, 5000);  // Polling every 5 seconds
+            simulateBtn.textContent = "Stop Simulation";
+            isSimulating = true;
+        }
+    }
+
+    // Polling function to simulate device movement every 5 seconds
+    function simulateDeviceMovement() {
+        fetch('/simulate-device-movement/')  // call API
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    console.log('Devices moved successfully.');
+                }
+            })
+            .catch(error => console.error('Error simulating device movement:', error));
+    }
+
+</script>
+{% endblock canvas %}
