@@ -78,7 +78,7 @@
 
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium mb-1" for="email">Email Address</label>
+                                    <label class="block text-sm font-medium mb-1" for="username">Username</label>
                                     {{ form.username }}
                                 </div>
                                 <span> </span>
@@ -89,7 +89,7 @@
                             </div>
                             <div class="flex items-center justify-between mt-6">
                                 <div class="mr-1">
-                                    <a class="text-sm underline hover:no-underline" href="reset-password.html">Forgot Password?</a>
+                                    <a class="text-sm underline hover:no-underline" href="{% url 'forgot-password' %}">Forgot Password?</a>
                                 </div>
                                 <button type="submit" class="btn bg-indigo-500 hover:bg-indigo-600 text-white ml-3">Sign In</button>
                             </div>
