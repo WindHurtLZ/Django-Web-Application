@@ -6,8 +6,10 @@ from apps.home.models import Device
 # Create your models here.
 class Map(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name='paths')
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    temperature = models.FloatField(null=True, blank=True)
+    speed = models.FloatField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
