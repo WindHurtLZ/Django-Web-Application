@@ -145,3 +145,35 @@ EMAIL_HOST_USER="sahilsohani016@gmail.com"
 EMAIL_HOST_PASSWORD="aknk ggrv cslq sosn"
 
 #aknk ggrv cslq sosn
+
+ONE_M2M_CSE_URL = "http://localhost:8080/cse-in"
+ONE_M2M_ORIGINATOR = "CWebApp"
+ONE_M2M_AE_NAME = "WebApp"
+ONE_M2M_AE_API = "NWebApp"
+ONE_M2M_AE_SRVS = ["3"]
+ONE_M2M_NOTIFICATIONS_URL = "http://localhost:8000/notifications/"
+
+# Logging, django will not show info-level log by default
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console':{
+            'level':'DEBUG',
+            'class':'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+        'apps.home.onem2m_service': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
+
+APPEND_SLASH = False
