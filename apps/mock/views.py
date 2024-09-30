@@ -5,8 +5,6 @@ from apps.widgets.models import Map
 import math
 import random
 
-
-# 模拟设备随机移动的函数
 def generate_random_location(lat, lng, radius=0.001):
     """
     Based on latest location(lat, lng)，generate new location in the range of radius

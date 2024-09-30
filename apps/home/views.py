@@ -14,8 +14,6 @@ from apps.home.onem2m_service import logger, generate_request_identifier
 from apps.widgets.models import Map
 from core import settings
 
-logger = logging.getLogger(__name__)
-
 # Create your views here.
 
 @login_required(login_url="/login/")

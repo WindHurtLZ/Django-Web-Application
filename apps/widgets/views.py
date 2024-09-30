@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 
 from apps.home.models import Device
 from apps.widgets.models import Map
@@ -27,6 +28,9 @@ def device_map(request):
     context = {'devices': devices_data}
     return render(request, 'widgets/map.html', context)
 
+@login_required(login_url="/login/")
+def device_logs(request):
+    return render(request, 'widgets/logs.html')
 
 def device_path(request, device_id):
     paths = Map.objects.filter(device_id=device_id).order_by('timestamp')
@@ -46,3 +50,25 @@ def device_path(request, device_id):
 
     # return latest position default
     return JsonResponse(latest_position, safe=False)
+
+@csrf_exempt
+def device_data(request):
+    if request.method == 'GET':
+        devices = Device.objects.prefetch_related('paths')  # Prefetch related paths
+
+        data_list = []
+        for device in devices:
+            latest_path = device.paths.last()  # Get the latest path
+            if latest_path:
+                data = {
+                    'device_name': device.name,
+                    'temperature': latest_path.temperature,
+                    'speed': latest_path.speed,
+                    'latitude': latest_path.latitude,
+                    'longitude': latest_path.longitude,
+                }
+                data_list.append(data)
+
+        return JsonResponse({'status': 'success', 'data': data_list}, status=200)
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
