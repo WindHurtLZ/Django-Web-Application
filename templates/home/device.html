@@ -269,7 +269,10 @@
                                         <svg class="w-4 h-4 shrink-0 fill-current text-slate-400 dark:text-slate-500 mr-2">
                                             <path d="M1 16h3c.3 0 .5-.1.7-.3l11-11c.4-.4.4-1 0-1.4l-3-3c-.4-.4-1-.4-1.4 0l-11 11c-.2.2-.3.4-.3.7v3c0 .6.4 1 1 1zm1-3.6l10-10L13.6 4l-10 10H2v-1.6z" />
                                         </svg>
-                                        <div class="italic"> Some here ? </div>
+                                        <div class="italic"> {{ ONE_M2M_CSE_URL }}/{{ device.ae_rn }}/data </div>
+                                        {% with ae_id_str=device.ae_id|stringformat:"s" %}
+                                        <div class="italic ml-2">C{{ device.type }}_{{ ae_id_str|slice:":8" }}</div>
+                                        {% endwith %}
                                     </div>
                                 </td>
                             </tr>

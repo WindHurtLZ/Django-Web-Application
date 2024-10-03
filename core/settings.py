@@ -26,6 +26,7 @@ SECRET_KEY = 'django-insecure-mz4k_gu2q9*!ye%^bv(ahbd&&$7n*%-%$&8u-g83j_3u1!eq&j
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
@@ -36,7 +37,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://a0fc-130-203-69-108.ngrok-free.app'  # ngrok
 ]
 
-ONE_M2M_CSE_URL = "http://3.18.123.201:8080/cse-in"
+ONE_M2M_CSE_URL = "http://98.83.180.67:8080/cse-in"
 ONE_M2M_ORIGINATOR = "CWebApp"
 ONE_M2M_AE_NAME = "WebApp"
 ONE_M2M_AE_API = "NWebApp"

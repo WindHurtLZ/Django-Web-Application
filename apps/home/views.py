@@ -30,7 +30,11 @@ def device(request):
 
     form = DeviceForm()
     user_devices = Device.objects.filter(owner=request.user)
-    context = {'devices': user_devices, 'form': form}
+    context = {
+        'devices': user_devices,
+        'form': form,
+        'ONE_M2M_CSE_URL': settings.ONE_M2M_CSE_URL,
+    }
 
     return render(request, 'home/device.html', context)
 
