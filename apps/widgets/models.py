@@ -4,8 +4,8 @@ from apps.home.models import Device
 
 
 # Create your models here.
-class Map(models.Model):
-    device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name='paths')
+class DeviceData(models.Model):
+    device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name='data')
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     temperature = models.FloatField(null=True, blank=True)

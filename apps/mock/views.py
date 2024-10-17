@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 from apps.home.models import Device
-from apps.widgets.models import Map
+from apps.widgets.models import DeviceData
 
 import math
 import random
@@ -24,18 +24,18 @@ def simulate_device_movement(request):
     devices = Device.objects.all()
 
     for device in devices:
-        last_path = device.paths.last()
+        last_path = device.data.last()
 
         if last_path:
             new_lat, new_lng = generate_random_location(last_path.latitude, last_path.longitude)
             # update new location
-            Map.objects.create(
+            DeviceData.objects.create(
                 device=device,
                 latitude=new_lat,
                 longitude=new_lng
             )
         else:
-            Map.objects.create(
+            DeviceData.objects.create(
                 device=device,
                 latitude=40.803237369807576,
                 longitude=-77.88694790309172

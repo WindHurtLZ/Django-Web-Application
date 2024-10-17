@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from apps.home.forms import DeviceForm
 from apps.home.models import Device
 from apps.home.onem2m_service import logger, generate_request_identifier
-from apps.widgets.models import Map
+from apps.widgets.models import DeviceData
 from core import settings
 
 # Create your views here.
@@ -131,7 +131,7 @@ def receive_notification(request):
                     latitude = con.get('latitude')
                     longitude = con.get('longitude')
 
-                    Map.objects.create(
+                    DeviceData.objects.create(
                         device=device,
                         temperature=temperature if temperature is not None else None,
                         speed=speed if speed is not None else None,
