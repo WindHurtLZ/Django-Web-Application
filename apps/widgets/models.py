@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.home.models import Device
+from apps.management.models import Device
 
 
 # Create your models here.
