@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from apps.home.models import Device
+from apps.management.models import Device
 from apps.widgets.models import DeviceData
 
 import math

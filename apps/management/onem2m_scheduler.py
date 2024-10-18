@@ -4,7 +4,7 @@ from datetime import datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from apps.home.onem2m_service import logger, job_register_web
+from apps.management.onem2m_service import logger, job_register_web
 
 logging.getLogger(__name__)
 

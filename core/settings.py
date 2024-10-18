@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apps.home.apps.HomeConfig',
+    'apps.management.apps.ManagementConfig',
     'apps.auth.apps.CustomAuthConfig',
     'apps.widgets.apps.WidgetsConfig',
     'apps.mock.apps.MockConfig',
@@ -71,7 +71,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'core.urls'
-LOGIN_REDIRECT_URL = "home"
+LOGIN_REDIRECT_URL = "management"
 LOGOUT_REDIRECT_URL = "login"
 
 TEMPLATES = [
@@ -177,7 +177,7 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'DEBUG',
         },
-        'apps.home.onem2m_service': {
+        'apps.management.onem2m_service': {
             'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': False,

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.home.models import Device
+from apps.management.models import Device
 
 
 # Register your models here.

@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
-from apps.home.models import Device
+from apps.management.models import Device
 from apps.widgets.models import DeviceData
 
 

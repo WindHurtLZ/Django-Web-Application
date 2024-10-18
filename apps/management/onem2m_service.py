@@ -2,6 +2,7 @@ import logging
 import uuid
 import requests
 
+from constant.mapping import get_module_mapping
 from core import settings
 
 logger = logging.getLogger(__name__)
@@ -106,6 +107,7 @@ def register_device_ae(device):
     }
 
     try:
+        # Step 1: Register Device as AE
         response = requests.post(cse_url, headers=headers, json=data, timeout=10)
         logger.debug(f"Received response: {response.status_code}, {response.text}")
         if response.status_code in [200, 201, 403, 409]:
@@ -114,22 +116,36 @@ def register_device_ae(device):
             else:
                 logger.info("Device AE successfully registered")
 
-                container_rn = "data"
-                container_creation_success = create_data_container(cse_url, ae_rn, container_rn, originator)
-                if container_creation_success:
-                    logger.info(f"Data container '{container_rn}' created for AE '{ae_rn}'")
-
-                    subscription_success = create_subscription(cse_url, ae_rn, originator, settings.ONE_M2M_NOTIFICATIONS_URL)
-                    if subscription_success:
-                        logger.info(f"Subscription created for container '{container_rn}' of AE '{ae_rn}'")
+                # Step 2: Create any containers
+                containers = ['data']
+                for container_rn in containers:
+                    if create_container(cse_url, ae_rn, container_rn, originator):
+                        logger.info(f"Container '{container_rn}' created for AE '{ae_rn}'")
                     else:
-                        logger.error(f"Failed to create subscription for container '{container_rn}' of AE '{ae_rn}'")
+                        logger.error(f"Failed to create container '{container_rn}' for AE '{ae_rn}'")
+
+                # Step 3: Create Subscription
+                if create_subscription(cse_url, ae_rn, originator, settings.ONE_M2M_NOTIFICATIONS_URL):
+                    logger.info(f"Subscription created for container 'data' of AE '{ae_rn}'")
                 else:
-                    logger.error(f"Failed to create data container '{container_rn}' for AE '{ae_rn}'")
+                    logger.error(f"Failed to create subscription for container 'data' of AE '{ae_rn}'")
 
+                # Step 4: Create Flexnode for device management
+                if create_flexnode(cse_url, ae_rn, originator):
+                    logger.info(f"Parent module class 'flexNode' created for AE '{ae_rn}'")
+                else:
+                    logger.error(f"Failed to create parent module class 'flexNode' for AE '{ae_rn}'")
 
+                # Step 5: Create Module
+                modules = ['dmAgent', 'dmDeviceInfo', 'dmFirmware', 'dmPackage', 'battery']
+                for module in modules:
+                    if create_module(cse_url, ae_rn, module, originator):
+                        logger.info(f"Module '{module}' created for AE '{ae_rn}'")
+                    else:
+                        logger.error(f"Failed to create module '{module}' for AE '{ae_rn}'")
 
             return True, ae_rn, originator
+
         else:
             logger.error(f"Device AE failed to register: {response.status_code}, {response.text}")
             return False, None, None
@@ -138,7 +154,7 @@ def register_device_ae(device):
         logger.error(f"Exception occur during Device AE registration: {e}")
         return False, None, None
 
-def create_data_container(cse_url, ae_rn, container_rn, originator):
+def create_container(cse_url, ae_rn, container_rn, originator):
 
     container_url = f"{cse_url}/{ae_rn}"
     request_identifier = generate_request_identifier()
@@ -183,7 +199,7 @@ def create_subscription(cse_url, ae_rn, originator, notification_url):
         "X-M2M-Origin": originator,
         "X-M2M-RI": request_identifier,
         "X-M2M-RVI": "3",
-        "Content-Type": "application/json;ty=23",  # ty=23 表示订阅资源
+        "Content-Type": "application/json;ty=23",  # ty=23 Subscription
         "Accept": "application/json",
     }
 
@@ -211,3 +227,80 @@ def create_subscription(cse_url, ae_rn, originator, notification_url):
     except requests.exceptions.RequestException as e:
         logger.error(f"Exception occur during subscription creation: {e}")
         return False
+
+def create_flexnode(cse_url, ae_rn, originator):
+
+    flexnode_url = f"{cse_url}/{ae_rn}"
+    request_identifier = generate_request_identifier()
+
+    headers = {
+        "X-M2M-Origin": originator,
+        "X-M2M-RI": request_identifier,
+        "X-M2M-RVI": "3",
+        "Content-Type": "application/json;ty=28",  # ty=28 for flexContainer
+        "Accept": "application/json",
+    }
+
+    data = {
+        "mad:fleNe": {
+            "rn": "flexNode",  # flexNode as the root container/module
+            "lbl": ["flexNode"],
+            "cnd": "org.onem2m.management.device.flexNode"
+        }
+    }
+
+    try:
+        response = requests.post(flexnode_url, headers=headers, json=data, timeout=10)
+        logger.debug(f"Received response for flexNode creation: {response.status_code}, {response.text}")
+        if response.status_code in [200, 201, 403, 409]:
+            if response.status_code in [403, 409]:
+                logger.warning(f"flexNode already exists: {response.status_code}, {response.text}")
+            else:
+                logger.info("flexNode successfully created")
+            return True
+        else:
+            logger.error(f"flexNode failed to create: {response.status_code}, {response.text}")
+            return False
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Exception occurred during flexNode creation: {e}")
+        return False
+
+
+def create_module(cse_url, ae_rn, module_rn, originator):
+    module_url = f"{cse_url}/{ae_rn}/flexNode"
+    request_identifier = generate_request_identifier()
+    mapped_module_name = get_module_mapping(module_rn)
+
+    headers = {
+        "X-M2M-Origin": originator,
+        "X-M2M-RI": request_identifier,
+        "X-M2M-RVI": "3",
+        "Content-Type": "application/json;ty=28", # ty=23 FlexContainer Module
+        "Accept": "application/json",
+    }
+
+    data = {
+        f"{mapped_module_name}": {
+            "rn": module_rn,
+            "cnd": f"org.onem2m.management.moduleclass.{module_rn}",
+        }
+    }
+
+    try:
+        response = requests.post(module_url, headers=headers, json=data, timeout=10)
+        logger.debug(f"Module creation response: {response.status_code}, {response.text}")
+
+        if response.status_code in [200, 201]:
+            logger.info(f"Module '{module_rn}' successfully created.")
+            return True
+        elif response.status_code in [403, 409]:
+            logger.warning(f"Module '{module_rn}' already exists or conflict: {response.status_code}, {response.text}")
+            return True
+        else:
+            logger.error(f"Failed to create module '{module_rn}': {response.status_code}, {response.text}")
+            return False
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Exception during module creation: {e}")
+        return False
+

@@ -8,9 +8,9 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 
-from apps.home.forms import DeviceForm
-from apps.home.models import Device
-from apps.home.onem2m_service import logger, generate_request_identifier
+from apps.management.forms import DeviceForm
+from apps.management.models import Device
+from apps.management.onem2m_service import logger, generate_request_identifier
 from apps.widgets.models import DeviceData
 from core import settings
 
@@ -23,7 +23,7 @@ def index(request):
     user_devices = Device.objects.filter(owner=request.user)
     context = {'devices': user_devices, 'form': form}
 
-    return render(request, 'home/index.html', context)
+    return render(request, 'management/index.html', context)
 
 @login_required(login_url="/login/")
 def device(request):
@@ -36,7 +36,7 @@ def device(request):
         'ONE_M2M_CSE_URL': settings.ONE_M2M_CSE_URL,
     }
 
-    return render(request, 'home/device.html', context)
+    return render(request, 'management/device.html', context)
 
 @login_required(login_url="/login/")
 def add_device(request):
@@ -51,7 +51,7 @@ def add_device(request):
     else:
         form = DeviceForm()
 
-    return render(request, 'home/device.html', {'form': form})
+    return render(request, 'management/device.html', {'form': form})
 
 @login_required(login_url="/login/")
 def delete_device(request):
