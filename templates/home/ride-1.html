@@ -1,0 +1,169 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title> {% block title %} Enter Bike Number {% endblock %}</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link href="{% static 'css/vendors/flatpickr.min.css' %}" rel="stylesheet">
+    <link href="{% static 'style.css' %}" rel="stylesheet">
+    <script>
+        if (localStorage.getItem('dark-mode') === 'false' || !('dark-mode' in localStorage)) {
+            document.querySelector('html').classList.remove('dark');
+            document.querySelector('html').style.colorScheme = 'light';
+        } else {
+            document.querySelector('html').classList.add('dark');
+            document.querySelector('html').style.colorScheme = 'dark';
+        }
+    </script>
+</head>
+
+<body class="font-inter antialiased bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400">
+
+    <script>
+        if (localStorage.getItem('sidebar-expanded') == 'true') {
+            document.querySelector('body').classList.add('sidebar-expanded');
+        } else {
+            document.querySelector('body').classList.remove('sidebar-expanded');
+        }
+    </script>
+
+    <main class="bg-white dark:bg-slate-900">
+
+        <div class="relative flex justify-center">
+
+            <!-- Content -->
+            <div class="w-full md:w-1/2">
+
+                <div class="min-h-[100dvh] h-full flex flex-col after:flex-1">
+
+                    <div class="flex-1">
+
+                        <!-- Header -->
+                        <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+                            <!-- Logo -->
+                            <a class="block" href="{% url 'home' %}">
+                                <img src="{% static 'images/fish.svg' %}" alt="Your Logo" width="64" height="64">
+                            </a>
+                            <div class="text-sm">
+                                Return to Home? <a class="font-medium text-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400" href="{% url 'home' %}">Here</a>
+                            </div>
+                        </div>
+
+                        <!-- Progress bar -->
+                        <div class="px-4 pt-12 pb-8">
+                            <div class="max-w-md mx-auto w-full">
+                                <div class="relative">
+                                    <div class="absolute left-0 top-1/2 -mt-px w-full h-0.5 bg-slate-200 dark:bg-slate-700" aria-hidden="true"></div>
+                                    <ul class="relative flex justify-between w-full">
+                                        <li>
+                                            <a class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold bg-indigo-500 text-white">1</a>
+                                        </li>
+                                        <li>
+                                            <a class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">2</a>
+                                        </li>
+                                        <li>
+                                            <a class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">3</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-4 py-8">
+                        <div class="max-w-md mx-auto">
+
+                            <h1 class="text-3xl text-slate-800 dark:text-slate-100 font-bold mb-6 text-center">Enter Bike ID number</h1>
+                            <!-- Form -->
+                            <form id="bikeNumberForm">
+                                {% csrf_token %}
+                                <div class="flex justify-center space-x-4 mb-8">
+                                    <input type="text" id="digit1" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit2')" onkeydown="moveToPrevious(event, 'digit1')" />
+                                    <input type="text" id="digit2" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit3')" onkeydown="moveToPrevious(event, 'digit1')" />
+                                    <input type="text" id="digit3" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit4')" onkeydown="moveToPrevious(event, 'digit2')" />
+                                    <input type="text" id="digit4" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="handleInput()" onkeydown="moveToPrevious(event, 'digit3')" />
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="{% static 'js/vendors/alpinejs.min.js' %}" defer></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("digit1").focus();
+        });
+        
+        function moveToNext(currentInput, nextInputId) {
+            if (currentInput.value.length === 1) {
+                const nextInput = document.getElementById(nextInputId);
+                if (nextInput) {
+                    nextInput.focus();
+                }
+            }
+        }
+    
+        function moveToPrevious(event, previousInputId) {
+            if (event.key === "Backspace" && event.target.value === "") {
+                const previousInput = document.getElementById(previousInputId);
+                if (previousInput) {
+                    previousInput.focus();
+                }
+            }
+        }
+    
+        function handleInput() {
+            const digit1 = document.getElementById('digit1').value;
+            const digit2 = document.getElementById('digit2').value;
+            const digit3 = document.getElementById('digit3').value;
+            const digit4 = document.getElementById('digit4').value;
+    
+            const bikeNumber = digit1 + digit2 + digit3 + digit4;
+    
+            if (bikeNumber.length === 4) {
+                validateBikeNumber(bikeNumber);
+            }
+        }
+    
+        function validateBikeNumber(bikeNumber) {
+            fetch('/validate-bike-number/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                body: JSON.stringify({ bike_number: bikeNumber })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.valid) {
+                    window.location.href = "/ride-2/";
+                } else {
+                    alert("Invalid bike number. Please try again.");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
+    </script>
+
+</body>
+
+</html>

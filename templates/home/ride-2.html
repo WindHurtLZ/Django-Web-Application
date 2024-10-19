@@ -1,0 +1,140 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title> {% block title %} Payment {% endblock %}</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link href="{% static 'css/vendors/flatpickr.min.css' %}" rel="stylesheet">
+    <link href="{% static 'style.css' %}" rel="stylesheet">
+    <script>
+        if (localStorage.getItem('dark-mode') === 'false' || !('dark-mode' in localStorage)) {
+            document.querySelector('html').classList.remove('dark');
+            document.querySelector('html').style.colorScheme = 'light';
+        } else {
+            document.querySelector('html').classList.add('dark');
+            document.querySelector('html').style.colorScheme = 'dark';
+        }
+    </script>
+</head>
+
+<body class="font-inter antialiased bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400">
+
+    <script>
+        if (localStorage.getItem('sidebar-expanded') == 'true') {
+            document.querySelector('body').classList.add('sidebar-expanded');
+        } else {
+            document.querySelector('body').classList.remove('sidebar-expanded');
+        }
+    </script>
+
+    <main class="bg-white dark:bg-slate-900">
+
+        <div class="relative flex justify-center">
+
+            <!-- Content -->
+            <div class="w-full md:w-1/2">
+
+                <div class="min-h-[100dvh] h-full flex flex-col after:flex-1">
+
+                    <div class="flex-1">
+
+                        <!-- Header -->
+                        <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+                            <!-- Logo -->
+                            <a class="block" href="{% url 'home' %}">
+                                <img src="{% static 'images/fish.svg' %}" alt="Your Logo" width="64" height="64">
+                            </a>
+                            <div class="text-sm">
+                                Return to Home? <a class="font-medium text-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400" href="{% url 'home' %}">Here</a>
+                            </div>
+                        </div>
+
+                        <!-- Progress bar -->
+                        <div class="px-4 pt-12 pb-8">
+                            <div class="max-w-md mx-auto w-full">
+                                <div class="relative">
+                                    <div class="absolute left-0 top-1/2 -mt-px w-full h-0.5 bg-slate-200 dark:bg-slate-700" aria-hidden="true"></div>
+                                    <ul class="relative flex justify-between w-full">
+                                        <li>
+                                            <a class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">1</a>
+                                        </li>
+                                        <li>
+                                            <a class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold bg-indigo-500 text-white">2</a>
+                                        </li>
+                                        <li>
+                                            <a class="flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">3</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-4 py-8">
+                        <div class="max-w-md mx-auto">
+
+                            <h1 class="text-3xl text-slate-800 dark:text-slate-100 font-bold mb-6 text-center">Payment</h1>
+                            <div class="relative px-4 sm:px-6 lg:px-8 pb-8 max-w-lg mx-auto" x-data="{ card: true }">
+                                <div class="bg-white dark:bg-slate-800 px-8 pb-6 rounded-b shadow-lg">
+
+                                    <!-- Card form -->
+                                    <div class="space-y-4">
+                                        <!-- Card Number -->
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" for="card-nr">Card Number <span class="text-rose-500">*</span></label>
+                                            <input id="card-nr" class="form-input w-full" type="text" placeholder="1111 2222 3333 4444" />
+                                        </div>
+                                        <!-- Expiry and CVC -->
+                                        <div class="flex space-x-4">
+                                            <div class="flex-1">
+                                                <label class="block text-sm font-medium mb-1" for="card-expiry">Expiry Date <span class="text-rose-500">*</span></label>
+                                                <input id="card-expiry" class="form-input w-full" type="text" placeholder="MM/YY" />
+                                            </div>
+                                            <div class="flex-1">
+                                                <label class="block text-sm font-medium mb-1" for="card-cvc">CVC <span class="text-rose-500">*</span></label>
+                                                <input id="card-cvc" class="form-input w-full" type="text" placeholder="CVC" />
+                                            </div>
+                                        </div>
+                                        <!-- Name on Card -->
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" for="card-name">Name on Card <span class="text-rose-500">*</span></label>
+                                            <input id="card-name" class="form-input w-full" type="text" placeholder="Your Name" />
+                                        </div>
+                                        <!-- Email -->
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1" for="card-email">Email <span class="text-rose-500">*</span></label>
+                                            <input id="card-email" class="form-input w-full" type="email" placeholder="youremail@domain.com" />
+                                        </div>
+                                    </div>
+                                    <!-- Form footer -->
+                                    <div class="mt-6">
+                                        <div class="mb-4">
+                                            <a href="{% url 'ride-3' %}">
+                                                <button class="btn w-full bg-indigo-500 hover:bg-indigo-600 text-white">Pay Now $2.75</button>
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="{% static 'js/vendors/alpinejs.min.js' %}" defer></script>
+    <script src="{% static 'js/main.js' %}"></script>
+
+</body>
+
+</html>
