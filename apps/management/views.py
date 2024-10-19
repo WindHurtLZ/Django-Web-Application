@@ -13,10 +13,18 @@ from apps.management.models import Device
 from apps.management.onem2m_service import logger, generate_request_identifier
 from apps.widgets.models import DeviceData
 from core import settings
+from core.decorators import superuser_required
 
-# Create your views here.
 
 @login_required(login_url="/login/")
+def root_view(request):
+    if request.user.is_superuser:
+        return redirect('management')
+    else:
+        return redirect('home')
+
+@login_required(login_url="/login/")
+@superuser_required
 def index(request):
 
     form = DeviceForm()
@@ -26,6 +34,7 @@ def index(request):
     return render(request, 'management/index.html', context)
 
 @login_required(login_url="/login/")
+@superuser_required
 def device(request):
 
     form = DeviceForm()
@@ -39,6 +48,7 @@ def device(request):
     return render(request, 'management/device.html', context)
 
 @login_required(login_url="/login/")
+@superuser_required
 def add_device(request):
     if request.method == 'POST':
         form = DeviceForm(request.POST)
@@ -54,6 +64,7 @@ def add_device(request):
     return render(request, 'management/device.html', {'form': form})
 
 @login_required(login_url="/login/")
+@superuser_required
 def delete_device(request):
     if request.method == 'POST':
         device_ids = request.POST.get('device_ids')

@@ -5,10 +5,12 @@ from django.views.decorators.csrf import csrf_exempt
 
 from apps.management.models import Device
 from apps.widgets.models import DeviceData
+from core.decorators import superuser_required
 
 
 # Create your views here.
 @login_required(login_url="/login/")
+@superuser_required
 def device_map(request):
 
     devices = Device.objects.all().prefetch_related('data')
@@ -29,6 +31,7 @@ def device_map(request):
     return render(request, 'widgets/map.html', context)
 
 @login_required(login_url="/login/")
+@superuser_required
 def device_logs(request):
     return render(request, 'widgets/logs.html')
 
