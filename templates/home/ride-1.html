@@ -84,7 +84,8 @@
                                     <input type="text" id="digit1" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit2')" onkeydown="moveToPrevious(event, 'digit1')" />
                                     <input type="text" id="digit2" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit3')" onkeydown="moveToPrevious(event, 'digit1')" />
                                     <input type="text" id="digit3" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit4')" onkeydown="moveToPrevious(event, 'digit2')" />
-                                    <input type="text" id="digit4" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="handleInput()" onkeydown="moveToPrevious(event, 'digit3')" />
+                                    <input type="text" id="digit4" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit5')" onkeydown="moveToPrevious(event, 'digit3')" />
+                                    <input type="text" id="digit5" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="handleInput()" onkeydown="moveToPrevious(event, 'digit4')" />
                                 </div>
                             </form>
 
@@ -129,10 +130,11 @@
             const digit2 = document.getElementById('digit2').value;
             const digit3 = document.getElementById('digit3').value;
             const digit4 = document.getElementById('digit4').value;
+            const digit5 = document.getElementById('digit5').value;
+            
+            const bikeNumber = digit1 + digit2 + digit3 + digit4 + digit5;
     
-            const bikeNumber = digit1 + digit2 + digit3 + digit4;
-    
-            if (bikeNumber.length === 4) {
+            if (bikeNumber.length === 5) {
                 validateBikeNumber(bikeNumber);
             }
         }

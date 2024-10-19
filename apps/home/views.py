@@ -17,15 +17,19 @@ def ride1_view(request):
     return render(request, 'home/ride-1.html')
 
 def ride2_view(request):
-    if not request.session.get('bike_verified'):
+    if not request.session.get('bike_number'):
         return redirect('home')
     return render(request, 'home/ride-2.html')
 
 def ride3_view(request):
-    if not request.session.get('bike_verified'):
+    bike_id = request.session.get('bike_number')
+
+    if not bike_id:
         return redirect('home')
 
-    request.session.pop('bike_verified', None)
+    # Send PUT to update Unlock resource here
+
+    request.session.pop('bike_number', None)
     return render(request, 'home/ride-3.html')
 
 def validate_bike_number(request):
@@ -34,9 +38,13 @@ def validate_bike_number(request):
         bike_number = data.get('bike_number')
 
         try:
-            Device.objects.get(asset_number=bike_number)
+            device = Device.objects.get(hardware_id=bike_number, user=None)
+            device.user = request.user
+            device.save()
+
             # Session flag
-            request.session['bike_verified'] = True
+            request.session['bike_number'] = bike_number
+
             return JsonResponse({'valid': True})
         except Device.DoesNotExist:
             return JsonResponse({'valid': False})

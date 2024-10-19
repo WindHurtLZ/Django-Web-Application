@@ -345,6 +345,10 @@
                             <label for="type" class="block text-sm font-medium text-gray-900">Device Type</label>
                             {{ form.type }}
                         </div>
+                        <div>
+                            <label for="type" class="block text-sm font-medium text-gray-900">Hardware ID</label>
+                            {{ form.hardware_id }}
+                        </div>
                     </div>
                 </div>
                 <div class="flex justify-end px-4 py-4">
@@ -364,6 +368,16 @@
     <script src="{% static 'js/dashboard-charts.js' %}"></script>
     <script src="{% static 'js/vendors/flatpickr.js' %}"></script>
     <script src="{% static 'js/flatpickr-init.js' %}"></script>
+    <script>
+        function validateHWID() {
+            const hardwareId = document.querySelector('input[name="hardware_id"]').value;
+            if (!/^\d{5}$/.test(hardwareId)) {
+                alert("Hardware ID must be exactly 5 digits.");
+                return false;
+            }
+            return true;
+        }
+    </script>
     {% block script %}{% endblock script %}
 
 </body>

@@ -13,15 +13,17 @@ class Device(models.Model):
 
     ae_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     ae_rn = models.CharField(max_length=100)
+    hardware_id = models.CharField(max_length=5, unique=True)
+    asset_number = models.CharField(max_length=4, unique=True)
     name = models.CharField(max_length=100)
     date = models.DateField(auto_now_add=True)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_devices')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='used_devices')
     version = models.CharField(max_length=50)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
     battery = models.IntegerField(default=0)
     location = models.CharField(max_length=100)
     type = models.CharField(max_length=50)
-    asset_number = models.CharField(max_length=4, unique=True)
 
     def __str__(self):
         return "%s: %s" % (self.owner, self.name)
