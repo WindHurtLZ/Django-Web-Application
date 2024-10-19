@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'apps.auth.apps.CustomAuthConfig',
     'apps.widgets.apps.WidgetsConfig',
     'apps.mock.apps.MockConfig',
+    'apps.home.apps.HomeConfig',
 ]
 
 MIDDLEWARE = [
