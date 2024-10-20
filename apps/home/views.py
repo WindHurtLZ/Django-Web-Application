@@ -1,10 +1,11 @@
 import json
 
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 
 from apps.management.models import Device
+from apps.management.onem2m_service import update_lock_module
 
 
 # Create your views here.
@@ -28,6 +29,10 @@ def ride3_view(request):
         return redirect('home')
 
     # Send PUT to update Unlock resource here
+    device = get_object_or_404(Device, hardware_id=bike_id)
+    ae_rn = device.ae_rn
+    originator = f"C{device.type}_{str(device.ae_id)[:8]}"
+    update_lock_module(ae_rn, originator, status=False)
 
     request.session.pop('bike_number', None)
     return render(request, 'home/ride-3.html')
