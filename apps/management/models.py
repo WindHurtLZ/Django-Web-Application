@@ -20,7 +20,7 @@ class Device(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_devices')
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='used_devices')
     version = models.CharField(max_length=50)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='inactive')
     battery = models.IntegerField(default=0)
     location = models.CharField(max_length=100)
     type = models.CharField(max_length=50)
