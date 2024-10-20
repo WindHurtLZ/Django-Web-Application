@@ -1,0 +1,94 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title> {% block title %} Thank You for Your Ride {% endblock %}</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link href="{% static 'css/vendors/flatpickr.min.css' %}" rel="stylesheet">
+    <link href="{% static 'style.css' %}" rel="stylesheet">
+    <script>
+        if (localStorage.getItem('dark-mode') === 'false' || !('dark-mode' in localStorage)) {
+            document.querySelector('html').classList.remove('dark');
+            document.querySelector('html').style.colorScheme = 'light';
+        } else {
+            document.querySelector('html').classList.add('dark');
+            document.querySelector('html').style.colorScheme = 'dark';
+        }
+    </script>
+</head>
+
+<body class="font-inter antialiased bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400">
+
+    <script>
+        if (localStorage.getItem('sidebar-expanded') == 'true') {
+            document.querySelector('body').classList.add('sidebar-expanded');
+        } else {
+            document.querySelector('body').classList.remove('sidebar-expanded');
+        }
+    </script>
+
+    <main class="bg-white dark:bg-slate-900">
+
+        <div class="relative flex justify-center">
+
+            <!-- Content -->
+            <div class="w-full md:w-1/2">
+
+                <div class="min-h-[100dvh] h-full flex flex-col after:flex-1">
+
+                    <div class="flex-1">
+
+                        <!-- Header -->
+                        <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+                            <!-- Logo -->
+                            <a class="block" href="{% url 'home' %}">
+                                <img src="{% static 'images/fish.svg' %}" alt="Your Logo" width="64" height="64">
+                            </a>
+                        </div>
+
+                        <div class="px-4 py-8">
+                            <div class="max-w-md mx-auto">
+
+                                <h1 class="text-3xl text-slate-800 dark:text-slate-100 font-bold mb-8 text-center">Thank You for Your Ride!</h1>
+                                <h2 class="text-2xl text-slate-800 dark:text-slate-100 font-bold mb-4 text-center">Ride Duration: {{ ride_duration }}</h2>
+                                <h3 class="text-xl text-slate-800 dark:text-slate-100 text-center">You will be redirected to the home page in <span id="countdown">5</span> seconds...</h3>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="{% static 'js/vendors/alpinejs.min.js' %}" defer></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Countdown logic
+            let countdown = 5;
+            const countdownElement = document.getElementById("countdown");
+
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                countdownElement.innerText = countdown;
+
+                if (countdown === 0) {
+                    clearInterval(countdownInterval);
+                    window.location.href = "{% url 'home' %}";
+                }
+            }, 1000);
+        });
+    </script>
+
+</body>
+
+</html>

@@ -81,11 +81,11 @@
                             <form id="bikeNumberForm">
                                 {% csrf_token %}
                                 <div class="flex justify-center space-x-4 mb-8">
-                                    <input type="number" id="digit1" min="0" max="9" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit2')" onkeydown="moveToPrevious(event, 'digit1')" />
-                                    <input type="number" id="digit2" min="0" max="9" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit3')" onkeydown="moveToPrevious(event, 'digit1')" />
-                                    <input type="number" id="digit3" min="0" max="9" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit4')" onkeydown="moveToPrevious(event, 'digit2')" />
-                                    <input type="number" id="digit4" min="0" max="9" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit5')" onkeydown="moveToPrevious(event, 'digit3')" />
-                                    <input type="number" id="digit5" min="0" max="9" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="handleInput()" onkeydown="moveToPrevious(event, 'digit4')" />
+                                    <input type="text" id="digit1" min="0" max="9" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit2')" onkeydown="moveToPrevious(event, 'digit1')" />
+                                    <input type="text" id="digit2" min="0" max="9" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit3')" onkeydown="moveToPrevious(event, 'digit1')" />
+                                    <input type="text" id="digit3" min="0" max="9" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit4')" onkeydown="moveToPrevious(event, 'digit2')" />
+                                    <input type="text" id="digit4" min="0" max="9" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="moveToNext(this, 'digit5')" onkeydown="moveToPrevious(event, 'digit3')" />
+                                    <input type="text" id="digit5" min="0" max="9" maxlength="1" class="text-center text-xl border border-slate-300 rounded w-12 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-500" oninput="handleInput()" onkeydown="moveToPrevious(event, 'digit4')" />
                                 </div>
                             </form>
 
