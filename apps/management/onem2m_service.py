@@ -136,10 +136,20 @@ def register_device_ae(device):
                 else:
                     logger.error(f"Failed to create parent module class 'flexNode' for AE '{ae_rn}'")
 
-                # Step 5: Create Module
+                # Step 5: Create Module for Device Management
                 modules = ['dmAgent', 'dmDeviceInfo', 'dmFirmware', 'dmPackage', 'battery']
+                rs_url = f"{ae_rn}/flexNode"
                 for module in modules:
-                    if create_module(cse_url, ae_rn, module, originator):
+                    if create_module(cse_url, rs_url, module, originator):
+                        logger.info(f"Module '{module}' created for Device Node '{ae_rn}'")
+                    else:
+                        logger.error(f"Failed to create module '{module}' for Device Node '{ae_rn}'")
+
+                # Step 6: Create Module for AE
+                modules = ['lock']
+                rs_url = f"{ae_rn}"
+                for module in modules:
+                    if create_module(cse_url, rs_url, module, originator):
                         logger.info(f"Module '{module}' created for AE '{ae_rn}'")
                     else:
                         logger.error(f"Failed to create module '{module}' for AE '{ae_rn}'")
@@ -267,10 +277,14 @@ def create_flexnode(cse_url, ae_rn, originator):
         return False
 
 
-def create_module(cse_url, ae_rn, module_rn, originator):
-    module_url = f"{cse_url}/{ae_rn}/flexNode"
+def create_module(cse_url, rs_url, module_rn, originator):
+    module_url = f"{cse_url}/{rs_url}"
     request_identifier = generate_request_identifier()
-    mapped_module_name = get_module_mapping(module_rn)
+    module_info = get_module_mapping(module_rn)
+
+    mapped_module_name = module_info["short_name"]
+    default_attributes = module_info.get("attributes", {})
+    cnd_type = module_info.get("cnd_type", "management")
 
     headers = {
         "X-M2M-Origin": originator,
@@ -283,9 +297,12 @@ def create_module(cse_url, ae_rn, module_rn, originator):
     data = {
         f"{mapped_module_name}": {
             "rn": module_rn,
-            "cnd": f"org.onem2m.management.moduleclass.{module_rn}",
+            "cnd": f"org.onem2m.{cnd_type}.moduleclass.{module_rn}",
         }
     }
+
+    # Extra attributes serve for customize attributes like "lock" in "cod:lock"
+    data[mapped_module_name].update(default_attributes)
 
     try:
         response = requests.post(module_url, headers=headers, json=data, timeout=10)
@@ -304,3 +321,36 @@ def create_module(cse_url, ae_rn, module_rn, originator):
         logger.error(f"Exception during module creation: {e}")
         return False
 
+def update_lock_module(ae_rn, originator, status):
+    cse_url = settings.ONE_M2M_CSE_URL
+    lock_resource_url = f"{cse_url}/{ae_rn}/lock"
+    request_identifier = generate_request_identifier()
+
+    headers = {
+        "X-M2M-Origin": originator,
+        "X-M2M-RI": request_identifier,
+        "X-M2M-RVI": "3",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    data = {
+        "cod:lock": {
+            "lock": status
+        }
+    }
+
+    try:
+        response = requests.put(lock_resource_url, headers=headers, json=data, timeout=10)
+        logger.debug(f"Lock update response: {response.status_code}, {response.text}")
+
+        if response.status_code in [200, 201]:
+            logger.info(f"Lock status successfully updated to '{status}' for AE '{ae_rn}'")
+            return True
+        else:
+            logger.error(f"Failed to update lock status: {response.status_code}, {response.text}")
+            return False
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Exception occurred during lock status update: {e}")
+        return False
