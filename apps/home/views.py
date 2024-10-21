@@ -35,7 +35,7 @@ def ride3_view(request):
     # Send PUT to update Unlock resource here
     device = get_object_or_404(Device, hardware_id=bike_id)
     ae_rn = device.ae_rn
-    originator = f"C{device.type}_{str(device.ae_id)[:8]}"
+    originator = f"C{device.hardware_id}"
     update_lock_module(ae_rn, originator, status=False)
 
     # Create a new ride record
@@ -119,7 +119,7 @@ def end_ride(request):
     if latest_ride:
         device = latest_ride.device
         ae_rn = device.ae_rn
-        originator = f"C{device.type}_{str(device.ae_id)[:8]}"
+        originator = f"C{device.hardware_id}"
 
         # Lock Bike
         update_lock_module(ae_rn, originator, status=True)

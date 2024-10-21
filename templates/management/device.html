@@ -283,7 +283,7 @@
                                         </svg>
                                         <div class="italic"> {{ ONE_M2M_CSE_URL }}/{{ device.ae_rn }}/data </div>
                                         {% with ae_id_str=device.ae_id|stringformat:"s" %}
-                                        <div class="italic ml-2">C{{ device.type }}_{{ ae_id_str|slice:":8" }}</div>
+                                        <div class="italic ml-2">C{{ device.hardware_id }}</div>
                                         {% endwith %}
                                     </div>
                                 </td>
