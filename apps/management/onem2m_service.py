@@ -85,7 +85,7 @@ def register_device_ae(device):
     request_identifier = generate_request_identifier()
 
     device_name_no_spaces = "".join(device.name.split())
-    originator = f"C{device.type}_{str(device.ae_id)[:8]}"
+    originator = f"C{device.hardware_id}"
     ae_rn = device.ae_rn
     ae_api = f"N{device.ae_rn}"
 

@@ -19,7 +19,13 @@
                         <thead class="text-xs uppercase text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/20 border-t border-slate-200 dark:border-slate-700">
                             <tr>
                                 <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="font-semibold text-left">Device Name</div>
+                                    <div class="font-semibold text-left">Device ID</div>
+                                </th>
+                                <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                                    <div class="font-semibold text-left">Current Rider</div>
+                                </th>
+                                <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                                    <div class="font-semibold text-left">Ride Time(s)</div>
                                 </th>
                                 <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
                                     <div class="font-semibold text-left">Temperature</div>
@@ -75,6 +81,8 @@
             // Check if a row for this device already exists
             if (existingRows[deviceName]) {
                 const row = existingRows[deviceName];
+                row.querySelector('.current-rider').innerText = item.current_rider || 'N/A';
+                row.querySelector('.ride-time').innerText = item.ride_duration || 'N/A';
                 row.querySelector('.temperature').innerText = item.temperature || 'N/A';
                 row.querySelector('.speed').innerText = item.speed || 'N/A';
                 row.querySelector('.latitude').innerText = item.latitude || 'N/A';
@@ -84,6 +92,8 @@
                 const newRow = `
                     <tr data-device-name="${deviceName}">
                         <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">${deviceName}</td>
+                        <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap current-rider">${item.current_rider || 'N/A'}</td>
+                        <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap ride-time">${item.ride_duration || 'N/A'}</td>
                         <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap temperature">${item.temperature || 'N/A'}</td>
                         <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap speed">${item.speed || 'N/A'}</td>
                         <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap latitude">${item.latitude || 'N/A'}</td>
@@ -94,7 +104,7 @@
         });
     }
 
-    // Fetch data every 5 seconds
+    // Fetch data every 1 seconds
     setInterval(fetchMapData, 1000);
 
     // Initial fetch

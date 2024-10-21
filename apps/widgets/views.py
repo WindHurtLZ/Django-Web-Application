@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from apps.management.models import Device
@@ -61,14 +62,25 @@ def device_data(request):
 
         data_list = []
         for device in devices:
-            latest_path = device.data.last()  # Get the latest path
-            if latest_path:
+            latest_data = device.data.last()  # Get the latest path
+
+            latest_ride = device.rides.filter(end_time__isnull=True).order_by('-start_time').first()
+
+            if latest_data:
+                # Calculate the duration of the current ride if active
+                if latest_ride and latest_ride.start_time and not latest_ride.end_time:
+                    ride_duration_seconds = (timezone.now() - latest_ride.start_time).total_seconds()
+                else:
+                    ride_duration_seconds = None
+
                 data = {
                     'device_name': device.name,
-                    'temperature': latest_path.temperature,
-                    'speed': latest_path.speed,
-                    'latitude': latest_path.latitude,
-                    'longitude': latest_path.longitude,
+                    'current_rider': device.user.username if device.user else 'None',
+                    'ride_duration': f"{int(ride_duration_seconds // 3600):02}:{int((ride_duration_seconds % 3600) // 60):02}:{int(ride_duration_seconds % 60):02}" if ride_duration_seconds is not None else 'None',
+                    'temperature': latest_data.temperature,
+                    'speed': latest_data.speed,
+                    'latitude': latest_data.latitude,
+                    'longitude': latest_data.longitude,
                 }
                 data_list.append(data)
 

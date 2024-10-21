@@ -4,8 +4,9 @@ import re
 
 import requests
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from apps.management.forms import DeviceForm
@@ -73,6 +74,35 @@ def delete_device(request):
             devices_to_delete = Device.objects.filter(id__in=device_ids_list, owner=request.user)
             devices_to_delete.delete()
     return redirect('device')
+
+
+@login_required
+@superuser_required
+def get_device_ride_info(request, device_id):
+    device = get_object_or_404(Device, hardware_id=device_id)
+
+    latest_ride = device.rides.order_by('-start_time').first()
+
+    if latest_ride and latest_ride.end_time is None:
+        # Current is riding
+        duration_seconds = (timezone.now() - latest_ride.start_time).total_seconds()
+        data = {
+            'device_name': device.name,
+            'status': 'in_use',
+            'rider_name': latest_ride.user.username,
+            'duration_seconds': duration_seconds,
+            'ride_history': list(device.rides.all().values())  # Return All ride history for this device
+        }
+    else:
+        # Not Used
+        data = {
+            'device_name': device.name,
+            'status': 'available',
+            'duration_seconds': 0,
+            'ride_history': list(device.rides.all().values())
+        }
+
+    return JsonResponse(data)
 
 
 @csrf_exempt
