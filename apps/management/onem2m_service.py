@@ -84,6 +84,12 @@ def register_device_ae(device):
     cse_url = settings.ONE_M2M_CSE_URL
     request_identifier = generate_request_identifier()
 
+    # Create Node and get its RI
+    node_ri = create_node(cse_url, device.hardware_id, "CAdmin")
+    if not node_ri:
+        logger.error("Failed to create node, AE registration aborted.")
+        return False, None, None
+
     device_name_no_spaces = "".join(device.name.split())
     originator = f"C{device.hardware_id}"
     ae_rn = device.ae_rn
@@ -103,6 +109,7 @@ def register_device_ae(device):
             "api": ae_api,
             "rr": True,
             "srv": settings.ONE_M2M_AE_SRVS,
+            "nl": node_ri,
         }
     }
 
@@ -116,43 +123,55 @@ def register_device_ae(device):
             else:
                 logger.info("Device AE successfully registered")
 
-                # Step 2: Create any containers
-                containers = ['data']
-                for container_rn in containers:
-                    if create_container(cse_url, ae_rn, container_rn, originator):
-                        logger.info(f"Container '{container_rn}' created for AE '{ae_rn}'")
-                    else:
-                        logger.error(f"Failed to create container '{container_rn}' for AE '{ae_rn}'")
-
-                # Step 3: Create Subscription
-                if create_subscription(cse_url, ae_rn, originator, settings.ONE_M2M_NOTIFICATIONS_URL):
-                    logger.info(f"Subscription created for container 'data' of AE '{ae_rn}'")
-                else:
-                    logger.error(f"Failed to create subscription for container 'data' of AE '{ae_rn}'")
-
-                # Step 4: Create Flexnode for device management
-                if create_flexnode(cse_url, ae_rn, originator):
-                    logger.info(f"Parent module class 'flexNode' created for AE '{ae_rn}'")
-                else:
-                    logger.error(f"Failed to create parent module class 'flexNode' for AE '{ae_rn}'")
-
-                # Step 5: Create Module for Device Management
-                modules = ['dmAgent', 'dmDeviceInfo', 'dmFirmware', 'dmPackage', 'battery']
-                rs_url = f"{ae_rn}/flexNode"
-                for module in modules:
-                    if create_module(cse_url, rs_url, module, originator):
-                        logger.info(f"Module '{module}' created for Device Node '{ae_rn}'")
-                    else:
-                        logger.error(f"Failed to create module '{module}' for Device Node '{ae_rn}'")
-
-                # Step 6: Create Module for AE
-                modules = ['lock']
+                # Step 2: Create Module for AE
+                modules = ['lock', 'bikeData']
                 rs_url = f"{ae_rn}"
                 for module in modules:
                     if create_module(cse_url, rs_url, module, originator):
                         logger.info(f"Module '{module}' created for AE '{ae_rn}'")
                     else:
                         logger.error(f"Failed to create module '{module}' for AE '{ae_rn}'")
+
+                # Step 3: Create Subscription for data model
+                sub_url = f"{cse_url}/{ae_rn}/bikeData"
+                sub_rn = "sub_bikeData"
+                if create_subscription(sub_url, sub_rn, originator, settings.ONE_M2M_NOTIFICATIONS_URL):
+                    logger.info(f"Subscription created for container 'data' of AE '{ae_rn}'")
+                else:
+                    logger.error(f"Failed to create subscription for container 'data' of AE '{ae_rn}'")
+
+                # Step 4: Create Flexnode for Device management
+                node_rn = f"nod_{device.hardware_id}"
+                if create_flexnode(cse_url, node_rn, "CAdmin"):
+                    logger.info(f"Parent module class 'flexNode' created for AE '{ae_rn}'")
+                else:
+                    logger.error(f"Failed to create parent module class 'flexNode' for AE '{ae_rn}'")
+
+                # Step 5: Create Module for Device Management
+                modules = ['dmAgent', 'dmFirmware', 'battery']
+                rs_url = f"{node_rn}/flexNode"
+                for module in modules:
+                    if create_module(cse_url, rs_url, module, "CAdmin"):
+                        logger.info(f"Module '{module}' created for Device Node '{node_rn}'")
+                    else:
+                        logger.error(f"Failed to create module '{module}' for Device Node '{node_rn}'")
+
+                # Step 6: Create Resource for dmAgent
+                module = 'reboot'
+                rs_url = f"{node_rn}/flexNode/dmAgent"
+                if create_module(cse_url, rs_url, module, "CAdmin"):
+                    logger.info(f"Action '{module}' created for Device Node '{node_rn}'")
+                else:
+                    logger.error(f"Failed to create Action '{module}' for Device Node '{node_rn}'")
+
+                # Step 7: Create Resource for dmFirmware
+                module = 'updateFirmware'
+                rs_url = f"{node_rn}/flexNode/dmFirmware"
+                if create_module(cse_url, rs_url, module, "CAdmin"):
+                    logger.info(f"Action '{module}' created for Device Node '{node_rn}'")
+                else:
+                    logger.error(f"Failed to create Action '{module}' for Device Node '{node_rn}'")
+
 
             return True, ae_rn, originator
 
@@ -200,9 +219,8 @@ def create_container(cse_url, ae_rn, container_rn, originator):
         logger.error(f"Exception occur during Container creation: {e}")
         return False
 
-def create_subscription(cse_url, ae_rn, originator, notification_url):
+def create_subscription(sub_url, sub_rn, originator, notification_url):
 
-    subscription_rn = f"{ae_rn}Subscription"
     request_identifier = generate_request_identifier()
 
     headers = {
@@ -215,32 +233,66 @@ def create_subscription(cse_url, ae_rn, originator, notification_url):
 
     data = {
         "m2m:sub": {
-            "rn": subscription_rn,
+            "rn": sub_rn,
             "nu": [notification_url],
             "nct": 1,
             "enc": {
-                "net": [3],
+                "net": [1],
             },
         }
     }
 
     try:
-        subscription_url = f"{cse_url}/{ae_rn}/data"
-        response = requests.post(subscription_url, headers=headers, json=data)
+        response = requests.post(sub_url, headers=headers, json=data)
         logger.debug(f"Subscription response: {response.status_code}, {response.text}")
         if response.status_code in [200, 201, 202]:
-            logger.info(f"Subscription '{subscription_rn}' created successfully for AE '{ae_rn}'")
+            logger.info(f"Subscription '{sub_url}' created successfully")
             return True
         else:
-            logger.error(f"Failed to create subscription '{subscription_rn}': {response.status_code}, {response.text}")
+            logger.error(f"Failed to create subscription '{sub_url}': {response.status_code}, {response.text}")
             return False
     except requests.exceptions.RequestException as e:
         logger.error(f"Exception occur during subscription creation: {e}")
         return False
 
-def create_flexnode(cse_url, ae_rn, originator):
 
-    flexnode_url = f"{cse_url}/{ae_rn}"
+def create_node(cse_url, hardware_id, originator):
+    node_url = f"{cse_url}"
+    request_identifier = generate_request_identifier()
+
+    headers = {
+        "X-M2M-Origin": originator,
+        "X-M2M-RI": request_identifier,
+        "X-M2M-RVI": "3",
+        "Content-Type": "application/json;ty=14",  # ty=14 for node
+        "Accept": "application/json",
+    }
+
+    data = {
+        "m2m:nod": {
+            "ni": hardware_id,
+            "rn": f"nod_{hardware_id}"
+        }
+    }
+
+    try:
+        response = requests.post(node_url, headers=headers, json=data, timeout=10)
+        logger.debug(f"Node creation response: {response.status_code}, {response.text}")
+        if response.status_code in [200, 201]:
+            node_info = response.json().get("m2m:nod")
+            node_ri = node_info.get("ri")
+            logger.info(f"Node successfully created with RI: {node_ri}")
+            return node_ri
+        else:
+            logger.error(f"Failed to create node: {response.status_code}, {response.text}")
+            return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Exception occurred during node creation: {e}")
+        return None
+
+def create_flexnode(cse_url, node_rn, originator):
+
+    flexnode_url = f"{cse_url}/{node_rn}"
     request_identifier = generate_request_identifier()
 
     headers = {
@@ -284,7 +336,11 @@ def create_module(cse_url, rs_url, module_rn, originator):
 
     mapped_module_name = module_info["short_name"]
     default_attributes = module_info.get("attributes", {})
-    cnd_type = module_info.get("cnd_type", "management")
+    cnd_type = module_info["cnd_type"]
+    domain = module_info["domain"]
+    type_ = module_info["type"]
+
+    cnd = f"org.{domain}.{cnd_type}.{type_}.{module_rn}"
 
     headers = {
         "X-M2M-Origin": originator,
@@ -297,7 +353,7 @@ def create_module(cse_url, rs_url, module_rn, originator):
     data = {
         f"{mapped_module_name}": {
             "rn": module_rn,
-            "cnd": f"org.onem2m.{cnd_type}.moduleclass.{module_rn}",
+            "cnd": cnd,
         }
     }
 

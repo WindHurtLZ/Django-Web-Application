@@ -10,6 +10,7 @@ class DeviceData(models.Model):
     longitude = models.FloatField(null=True, blank=True)
     temperature = models.FloatField(null=True, blank=True)
     speed = models.FloatField(null=True, blank=True)
+    acceleration = models.FloatField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
