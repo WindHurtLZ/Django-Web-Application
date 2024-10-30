@@ -1,0 +1,51 @@
+// Domain:         edu.psu.bike
+[
+    // ModuleClass: bikeData (bikDt)
+    {
+        "type"      : "bdm:bikDt",
+        "lname"     : "bikeData",
+        "cnd"       : "edu.psu.bike.moduleclass.bikeData",
+        "attributes": [
+            // DataPoint: latitude
+            {
+                "sname" : "latie",
+                "lname" : "latitude",
+                "type" : "float",
+                "car" : "1"
+            },
+
+            // DataPoint: longitude
+            {
+                "sname" : "longe",
+                "lname" : "longitude",
+                "type" : "float",
+                "car" : "1"
+            },
+
+            // DataPoint: speed
+            {
+                "sname" : "speed",
+                "lname" : "speed",
+                "type" : "float",
+                "car" : "1"
+            },
+
+            // DataPoint: temperature
+            {
+                "sname" : "tempe",
+                "lname" : "temperature",
+                "type" : "float",
+                "car" : "01"
+            },
+
+            // DataPoint: acceleration
+            {
+                "sname" : "accel",
+                "lname" : "acceleration",
+                "type" : "float",
+                "car" : "01"
+            }
+
+        ]
+    }
+]
