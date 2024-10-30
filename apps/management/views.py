@@ -56,7 +56,7 @@ def add_device(request):
         if form.is_valid():
             new_device = form.save(commit=False)
             new_device.owner = request.user  # Set the owner to the current user
-            new_device.ae_rn = form.cleaned_data['name'].replace(" ","") + "-AE"
+            new_device.ae_rn = "ae_" + form.cleaned_data['hardware_id'].replace(" ","")
             new_device.save()
             return redirect('device')  # Redirect to the device list after saving
     else:
@@ -121,7 +121,7 @@ def receive_notification(request):
                 logger.error(f"Unsupported Content-Type: {content_type}")
                 return JsonResponse({"status": "error", "message": "Unsupported Content-Type"}, status=415)
 
-            logger.debug(f"Received notification: {payload}")
+            logger.debug(f"Received notification payload: {payload}")
 
             if payload.get('m2m:sgn', {}).get('vrq', False):
                 logger.info("Received verification request. Responding with 200 OK.")
@@ -136,58 +136,38 @@ def receive_notification(request):
             notification = payload.get('m2m:sgn', {})
             nev = notification.get('nev', {})
             rep = nev.get('rep', {})
-            cin = rep.get('m2m:cin', {})
-            rn = cin.get('rn', {})
+            bike_data = rep.get('bdm:bikDt', {})
+            pi = bike_data.get('pi', {})
 
-            query_url = f"{settings.ONE_M2M_CSE_URL}?fu=1&ty=4&rn={rn}"
-            headers = {
-                "X-M2M-Origin": "CAdmin",
-                "X-M2M-RI": generate_request_identifier(),
-                "X-M2M-RVI": "3",
-                "Accept": "application/json"
-            }
-            response = requests.get(query_url, headers=headers)
-            if response.status_code == 200:
-                uril_list = response.json().get("m2m:uril", [])
-                if uril_list:
+            if not pi or not pi.startswith('C'):
+                logger.error(f"Invalid or missing 'pi' in payload: {pi}")
+                return JsonResponse({"status": "error", "message": "Invalid or missing 'pi' value"}, status=400)
 
-                    full_path = uril_list[0]
-                    ae_rn = full_path.split('/')[1]  # extract AE resource name
+            hardware_id = pi[1:]
 
-                    try:
-                        device = Device.objects.get(ae_rn=ae_rn)
-                    except Device.DoesNotExist:
-                        logger.error(f"No device found for AE Resource Name: {ae_rn}")
-                        return JsonResponse({'status': 'error', 'message': 'Device not found'}, status=404)
+            try:
+                device = Device.objects.get(hardware_id=hardware_id)
+            except Device.DoesNotExist:
+                logger.error(f"No device found with hardware_id: {hardware_id}")
+                return JsonResponse({'status': 'error', 'message': 'Device not found'}, status=404)
 
-                    con_str = cin.get('con')
-                    try:
-                        con = json.loads(con_str)
-                    except (json.JSONDecodeError, TypeError):
-                        logger.error(f"Invalid JSON content in `con`: {con_str}")
-                        return JsonResponse({"status": "error", "message": "Invalid JSON content in `con`"}, status=400)
+            latitude = bike_data.get('latie')
+            longitude = bike_data.get('longe')
+            temperature = bike_data.get('tempe')
+            speed = bike_data.get('speed')
+            acceleration = bike_data.get('accel')
 
-                    temperature = con.get('temperature')
-                    speed = con.get('speed')
-                    latitude = con.get('latitude')
-                    longitude = con.get('longitude')
+            DeviceData.objects.create(
+                device=device,
+                latitude=latitude if latitude is not None else None,
+                longitude=longitude if longitude is not None else None,
+                temperature = temperature if temperature is not None else None,
+                speed = speed if speed is not None else None,
+                acceleration = acceleration if acceleration is not None else None,
+            )
 
-                    DeviceData.objects.create(
-                        device=device,
-                        temperature=temperature if temperature is not None else None,
-                        speed=speed if speed is not None else None,
-                        latitude=latitude if latitude is not None else None,
-                        longitude=longitude if longitude is not None else None
-                    )
-
-                    logger.info(f"DataInstance created for device '{device.name}': {con}")
-                    return JsonResponse({"status": "success"}, status=200)
-                else:
-                    logger.error("No uril returned from CSE query")
-                    return JsonResponse({"status": "error", "message": "No uril found"}, status=404)
-            else:
-                logger.error(f"Failed to query CSE for uril: {response.status_code}, {response.text}")
-                return JsonResponse({"status": "error", "message": "Failed to query CSE"}, status=500)
+            logger.info(f"DataInstance updated for device '{device.name}': {bike_data}")
+            return JsonResponse({"status": "success"}, status=200)
 
         except json.JSONDecodeError:
             logger.error("Invalid JSON received")
