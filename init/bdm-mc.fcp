@@ -1,10 +1,10 @@
-// Domain:         edu.psu.bike
+// Domain:         org.onem2m.bike
 [
     // ModuleClass: bikeData (bikDt)
     {
         "type"      : "bdm:bikDt",
         "lname"     : "bikeData",
-        "cnd"       : "edu.psu.bike.moduleclass.bikeData",
+        "cnd"       : "org.onem2m.bike.moduleclass.bikeData",
         "attributes": [
             // DataPoint: latitude
             {
@@ -43,6 +43,31 @@
                 "sname" : "accel",
                 "lname" : "acceleration",
                 "type" : "float",
+                "car" : "01"
+            }
+
+        ]
+    },
+
+    // ModuleClass: meshConnectivity
+    {
+        "type"      : "bdm:msCoy",
+        "lname"     : "meshConnectivity",
+        "cnd"       : "org.onem2m.bike.moduleclass.meshConnectivity",
+        "attributes": [
+            // DataPoint: neighbor
+            {
+                "sname" : "neibo",
+                "lname" : "neighbor",
+                "type" : "string",
+                "car" : "1"
+            },
+
+            // DataPoint: rssi
+            {
+                "sname" : "rssi",
+                "lname" : "rssi",
+                "type" : "integer",
                 "car" : "01"
             }
 

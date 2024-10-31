@@ -1,0 +1,19 @@
+// Domain:         org.onem2m.bike
+[
+    // DeviceClass: deviceBike
+    {
+        "type"      : "bdm:deBik",
+        "lname"     : "deviceBike",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.bike.device.deviceBike",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" },
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children": [
+            "bdm:bikDt"
+        ]
+    }
+]
