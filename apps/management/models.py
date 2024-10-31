@@ -21,12 +21,14 @@ class Device(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='used_devices')
     version = models.CharField(max_length=50)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='inactive')
-    battery = models.IntegerField(default=0)
     location = models.CharField(max_length=100)
     type = models.CharField(max_length=50)
 
     def __str__(self):
         return "%s: %s" % (self.owner, self.name)
+
+    def latest_battery(self):
+        return self.battery.order_by('-timestamp').first()
 
     def save(self, *args, **kwargs):
         if not self.asset_number:
