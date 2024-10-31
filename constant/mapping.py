@@ -134,7 +134,8 @@ MODULE_MAPPING = {
     "battery": {
         "short_name": "cod:bat",
         "attributes": {
-
+            "lvl": 0,
+            "lowBy": True
         },
         "cnd_type": "common",
         "domain": "onem2m",
@@ -211,7 +212,16 @@ MODULE_MAPPING = {
         "domain": "onem2m",
         "type": "moduleclass"
     },
-
+    "meshConnectivity": {
+        "short_name": "bdm:msCoy",
+        "attributes": {
+            "neibo": "Neighbor ID",
+            "rssi": 0
+        },
+        "cnd_type": "bike",
+        "domain": "onem2m",
+        "type": "moduleclass"
+    },
 }
 
 def get_current_timestamp():

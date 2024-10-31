@@ -123,22 +123,22 @@ def register_device_ae(device):
             else:
                 logger.info("Device AE successfully registered")
 
-                # Step 2: Create Module for AE
-                modules = ['lock', 'bikeData']
+                # Step 2: Create Module Resource for AE
+                modules = ['lock', 'bikeData', "meshConnectivity", "battery"]
                 rs_url = f"{ae_rn}"
                 for module in modules:
                     if create_module(cse_url, rs_url, module, originator):
                         logger.info(f"Module '{module}' created for AE '{ae_rn}'")
+
+                        # Step 3: Create Subscription for Module
+                        sub_url = f"{cse_url}/{ae_rn}/{module}"
+                        sub_rn = f"sub_{module}"
+                        if create_subscription(sub_url, sub_rn, originator, settings.ONE_M2M_NOTIFICATIONS_URL):
+                            logger.info(f"Subscription created for '{module}' of AE '{ae_rn}'")
+                        else:
+                            logger.error(f"Failed to create subscription for '{module}' of AE '{ae_rn}'")
                     else:
                         logger.error(f"Failed to create module '{module}' for AE '{ae_rn}'")
-
-                # Step 3: Create Subscription for data model
-                sub_url = f"{cse_url}/{ae_rn}/bikeData"
-                sub_rn = "sub_bikeData"
-                if create_subscription(sub_url, sub_rn, originator, settings.ONE_M2M_NOTIFICATIONS_URL):
-                    logger.info(f"Subscription created for container 'data' of AE '{ae_rn}'")
-                else:
-                    logger.error(f"Failed to create subscription for container 'data' of AE '{ae_rn}'")
 
                 # Step 4: Create Flexnode for Device management
                 node_rn = f"nod_{device.hardware_id}"
@@ -148,7 +148,7 @@ def register_device_ae(device):
                     logger.error(f"Failed to create parent module class 'flexNode' for AE '{ae_rn}'")
 
                 # Step 5: Create Module for Device Management
-                modules = ['dmAgent', 'dmFirmware', 'battery']
+                modules = ['dmAgent', 'dmFirmware']
                 rs_url = f"{node_rn}/flexNode"
                 for module in modules:
                     if create_module(cse_url, rs_url, module, "CAdmin"):
@@ -161,6 +161,13 @@ def register_device_ae(device):
                 rs_url = f"{node_rn}/flexNode/dmAgent"
                 if create_module(cse_url, rs_url, module, "CAdmin"):
                     logger.info(f"Action '{module}' created for Device Node '{node_rn}'")
+
+                    sub_url = f"{cse_url}/{rs_url}/{module}"
+                    sub_rn = f"sub_{module}"
+                    if create_subscription(sub_url, sub_rn, "CAdmin", settings.ONE_M2M_NOTIFICATIONS_URL):
+                        logger.info(f"Subscription created for '{module}' of Node '{node_rn}'")
+                    else:
+                        logger.error(f"Failed to create subscription for '{module}' of Node '{node_rn}'")
                 else:
                     logger.error(f"Failed to create Action '{module}' for Device Node '{node_rn}'")
 
@@ -169,6 +176,13 @@ def register_device_ae(device):
                 rs_url = f"{node_rn}/flexNode/dmFirmware"
                 if create_module(cse_url, rs_url, module, "CAdmin"):
                     logger.info(f"Action '{module}' created for Device Node '{node_rn}'")
+
+                    sub_url = f"{cse_url}/{rs_url}/{module}"
+                    sub_rn = f"sub_{module}"
+                    if create_subscription(sub_url, sub_rn, "CAdmin", settings.ONE_M2M_NOTIFICATIONS_URL):
+                        logger.info(f"Subscription created for '{module}' of Node '{node_rn}'")
+                    else:
+                        logger.error(f"Failed to create subscription for '{module}' of Node '{node_rn}'")
                 else:
                     logger.error(f"Failed to create Action '{module}' for Device Node '{node_rn}'")
 

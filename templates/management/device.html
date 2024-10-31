@@ -253,7 +253,13 @@
                                         {{ device.status }}</div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="text-center">{{ device.battery }}</div>
+                                    <div class="text-center">
+                                        {% if device.latest_battery %}
+                                            {{ device.latest_battery.battery_percentage }}%
+                                        {% else %}
+                                            None
+                                        {% endif %}
+                                    </div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
                                     <div class="text-left">{{ device.location }}</div>

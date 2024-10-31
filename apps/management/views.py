@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from apps.management.forms import DeviceForm
 from apps.management.models import Device
 from apps.management.onem2m_service import logger, generate_request_identifier
-from apps.widgets.models import DeviceData
+from apps.widgets.models import DeviceData, MeshConnectivity, Battery
 from core import settings
 from core.decorators import superuser_required
 
@@ -136,37 +136,17 @@ def receive_notification(request):
             notification = payload.get('m2m:sgn', {})
             nev = notification.get('nev', {})
             rep = nev.get('rep', {})
-            bike_data = rep.get('bdm:bikDt', {})
-            pi = bike_data.get('pi', {})
 
-            if not pi or not pi.startswith('C'):
-                logger.error(f"Invalid or missing 'pi' in payload: {pi}")
-                return JsonResponse({"status": "error", "message": "Invalid or missing 'pi' value"}, status=400)
+            for key, data in rep.items():
+                if key == 'bdm:bikDt':
+                    process_device_data(data)
+                elif key == 'bdm:msCoy':
+                    process_mesh_connectivity(data)
+                elif key == 'cod:bat':
+                    process_battery_level(data)
+                else:
+                    logger.warning(f"Unknown data type: {key}")
 
-            hardware_id = pi[1:]
-
-            try:
-                device = Device.objects.get(hardware_id=hardware_id)
-            except Device.DoesNotExist:
-                logger.error(f"No device found with hardware_id: {hardware_id}")
-                return JsonResponse({'status': 'error', 'message': 'Device not found'}, status=404)
-
-            latitude = bike_data.get('latie')
-            longitude = bike_data.get('longe')
-            temperature = bike_data.get('tempe')
-            speed = bike_data.get('speed')
-            acceleration = bike_data.get('accel')
-
-            DeviceData.objects.create(
-                device=device,
-                latitude=latitude if latitude is not None else None,
-                longitude=longitude if longitude is not None else None,
-                temperature = temperature if temperature is not None else None,
-                speed = speed if speed is not None else None,
-                acceleration = acceleration if acceleration is not None else None,
-            )
-
-            logger.info(f"DataInstance updated for device '{device.name}': {bike_data}")
             return JsonResponse({"status": "success"}, status=200)
 
         except json.JSONDecodeError:
@@ -176,3 +156,89 @@ def receive_notification(request):
         except Exception as e:
             logger.exception(f"Error processing notification: {e}")
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+def process_device_data(data):
+    pi = data.get('pi', '')
+
+    if not pi or not pi.lower().startswith('c'):
+        logger.error(f"Invalid or missing 'pi' in device data: {pi}")
+        return
+
+    hardware_id = pi[1:]
+
+    try:
+        device = Device.objects.get(hardware_id=hardware_id)
+    except Device.DoesNotExist:
+        logger.error(f"No device found with hardware_id: {hardware_id}")
+        return
+
+    latitude = data.get('latie')
+    longitude = data.get('longe')
+    temperature = data.get('tempe')
+    speed = data.get('speed')
+    acceleration = data.get('accel')
+
+    if any([temperature is not None, speed is not None, latitude is not None, longitude is not None,
+            acceleration is not None]):
+        DeviceData.objects.create(
+            device=device,
+            temperature=temperature,
+            speed=speed,
+            latitude=latitude,
+            longitude=longitude,
+            acceleration=acceleration,
+        )
+        logger.info(f"DeviceData updated for device '{device.name}': {data}")
+    else:
+        logger.warning(f"No relevant sensor data found in device data: {data}")
+
+def process_mesh_connectivity(data):
+    pi = data.get('pi', '')
+
+    if not pi or not pi.lower().startswith('c'):
+        logger.error(f"Invalid or missing 'pi' in mesh connectivity data: {pi}")
+        return
+
+    hardware_id = pi[1:]
+
+    try:
+        device = Device.objects.get(hardware_id=hardware_id)
+    except Device.DoesNotExist:
+        logger.error(f"No device found with hardware_id: {hardware_id}")
+        return
+
+    parent_id = data.get('neibo')
+    rssi = data.get('rssi')
+
+    mesh_connectivity, created = MeshConnectivity.objects.get_or_create(device=device)
+    mesh_connectivity.parent_id = parent_id
+    mesh_connectivity.rssi = rssi
+    mesh_connectivity.save()
+
+    logger.info(f"MeshConnectivity updated for device '{device.name}': {data}")
+
+def process_battery_level(data):
+    pi = data.get('pi', '')
+
+    if not pi or not pi.lower().startswith('c'):  # 不区分大小写
+        logger.error(f"Invalid or missing 'pi' in battery data: {pi}")
+        return
+
+    hardware_id = pi[1:]
+
+    try:
+        device = Device.objects.get(hardware_id=hardware_id)
+    except Device.DoesNotExist:
+        logger.error(f"No device found with hardware_id: {hardware_id}")
+        return
+
+    battery_percentage = data.get('lvl')
+
+    if battery_percentage is not None:
+        Battery.objects.create(
+            device=device,
+            battery_percentage=battery_percentage
+        )
+        logger.info(f"BatteryLevel updated for device '{device.name}': {data}")
+    else:
+        logger.warning(f"No 'battery_level' found in battery data: {data}")
