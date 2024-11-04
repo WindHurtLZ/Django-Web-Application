@@ -1,0 +1,426 @@
+{% extends 'layouts/base.html' %}
+
+{% block load %}
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        .node circle {
+            fill: #fff;
+            stroke: steelblue;
+            stroke-width: 3px;
+        }
+        .node text {
+            font: 12px sans-serif;
+        }
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 2px;
+        }
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 8px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        .link text {
+            font: 10px sans-serif;
+            fill: #333;
+        }
+    </style>
+{% endblock load %}
+
+{% block canvas %}
+
+<main class="grow">
+<div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
+
+    <!-- Page header -->
+    <div class="sm:flex sm:justify-between sm:items-center mb-8">
+        <div class="mb-4 sm:mb-0">
+            <h1 class="text-2xl md:text-3xl text-slate-800 dark:text-slate-100 font-bold">Mesh Visualization</h1>
+        </div>
+    </div>
+    <svg id="mesh-network-svg" width="1200" height="800"></svg>
+    <div class="tooltip" style="opacity:0;"></div>
+</div>
+</main>
+
+<script>
+    const width = 1200;
+    const height = 800;
+    let firstTime = true;
+
+    const svg = d3.select("#mesh-network-svg")
+                  .attr("width", width)
+                  .attr("height", height);
+
+    const tooltip = d3.select(".tooltip");
+
+    // Arrow marker for direction with fixed size
+    svg.append("defs").append("marker")
+       .attr("id", "arrow")
+       .attr("viewBox", "0 -5 10 10")
+       .attr("refX", 15)  // 控制箭头离线的距离
+       .attr("refY", 0)
+       .attr("markerWidth", 4)  // 固定箭头宽度
+       .attr("markerHeight", 4)  // 固定箭头高度
+       .attr("orient", "auto")
+       .append("path")
+       .attr("d", "M0,-5L10,0L0,5")
+       .attr("fill", "#hhh");
+
+    const simulation = d3.forceSimulation()
+                         .force("link", d3.forceLink().id(d => d.id).distance(400))
+                         .force("charge", d3.forceManyBody().strength(-200))
+                         .force("center", d3.forceCenter(width / 2, height / 2 - 50))
+                         .force("collision", d3.forceCollide().radius(50));
+
+    let link = svg.append("g")
+                  .attr("class", "links")
+                  .selectAll("line");
+
+    let linkText = svg.append("g")
+                      .attr("class", "link-texts")
+                      .selectAll("text");
+
+    let node = svg.append("g")
+                  .attr("class", "nodes")
+                  .selectAll("g");
+
+    function renderMeshNetwork(data) {
+        const nodes = data.nodes;
+        const links = data.links;
+
+        // Update links with markers for direction
+        link = link.data(links, d => `${d.source}-${d.target}`);
+        link.exit().remove();
+        link = link.enter().append("line")
+                   .attr("stroke-width", d => 3)
+                   .attr("stroke", d => {
+                       const rssi = d.rssi;
+                       return rssi > -50 ? "green" : rssi > -80 ? "orange" : "red";
+                   })
+                   .attr("marker-end", "url(#arrow)")
+                   .merge(link);
+
+        // Update RSSI text on links
+        linkText = linkText.data(links, d => `${d.source}-${d.target}`);
+        linkText.exit().remove();
+        linkText = linkText.enter().append("text")
+                    .attr("dy", -5)
+                    .attr("text-anchor", "middle")
+                    .merge(linkText)
+                    .text(d => `${d.rssi}`);
+
+        // Update nodes
+        node = node.data(nodes, d => d.id);
+        node.exit().remove();
+        const nodeEnter = node.enter().append("g")
+                               .call(d3.drag()
+                                   .on("start", dragstarted)
+                                   .on("drag", dragged)
+                                   .on("end", dragended));
+
+        nodeEnter.append("circle")
+                 .attr("r", 10)
+                 .attr("fill", "steelblue");
+
+        nodeEnter.append("text")
+                 .attr("dx", 15)
+                 .attr("dy", ".35em")
+                 .text(d => d.name);
+
+        nodeEnter.on("mouseover", function(event, d) {
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                tooltip.html(d.name)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", function(d) {
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+        node = nodeEnter.merge(node);
+
+        // Update simulation
+        simulation.nodes(nodes).on("tick", ticked);
+        simulation.force("link").links(links);
+
+        if (firstTime) {
+            simulation.alpha(1).restart();
+            firstTime = false;
+        } else {
+            simulation.alpha(1).restart();
+        }
+    }
+
+    // Tick function
+    function ticked() {
+        link.attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
+
+        linkText.attr("x", d => (d.source.x + d.target.x) / 2)
+                .attr("y", d => (d.source.y + d.target.y) / 2);
+
+        node.attr("transform", d => `translate(${d.x},${d.y})`);
+    }
+
+    // Drag functions
+    function dragstarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+    }
+
+    function dragended(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
+
+    // Fetch Mesh Network Data
+    function fetchMeshNetwork() {
+        fetch('/mesh-network-data/')
+            .then(response => response.json())
+            .then(data => {
+                renderMeshNetwork(data);
+            })
+            .catch(error => {
+                console.error('Error fetching mesh network data:', error);
+            });
+    }
+
+    // Initial fetch
+    fetchMeshNetwork();
+
+    setInterval(fetchMeshNetwork, 5000);
+</script>
+
+{% endblock canvas %}
+
+
+{#{% extends 'layouts/base.html' %}#}
+{##}
+{#{% block load %}#}
+{#    <script src="https://d3js.org/d3.v6.min.js"></script>#}
+{#    <style>#}
+{#        .node circle {#}
+{#            fill: #fff;#}
+{#            stroke: steelblue;#}
+{#            stroke-width: 3px;#}
+{#        }#}
+{#        .node text {#}
+{#            font: 12px sans-serif;#}
+{#        }#}
+{#        .link {#}
+{#            fill: none;#}
+{#            stroke: #ccc;#}
+{#            stroke-width: 2px;#}
+{#        }#}
+{#        .tooltip {#}
+{#            position: absolute;#}
+{#            text-align: center;#}
+{#            padding: 8px;#}
+{#            font: 12px sans-serif;#}
+{#            background: lightsteelblue;#}
+{#            border: 0px;#}
+{#            border-radius: 8px;#}
+{#            pointer-events: none;#}
+{#        }#}
+{#    </style>#}
+{#{% endblock load %}#}
+{##}
+{#{% block canvas %}#}
+{##}
+{#    <main class="grow">#}
+{#    <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">#}
+{##}
+{#        <!-- Page header -->#}
+{#        <div class="sm:flex sm:justify-between sm:items-center mb-8">#}
+{#            <div class="mb-4 sm:mb-0">#}
+{#                <h1 class="text-2xl md:text-3xl text-slate-800 dark:text-slate-100 font-bold">Mesh Visualization</h1>#}
+{#            </div>#}
+{#        </div>#}
+{#        <svg id="mesh-network-svg" width="1200" height="800"></svg>#}
+{#        <div class="tooltip" style="opacity:0;"></div>#}
+{#    </div>#}
+{#    </main>#}
+{#    <script>#}
+{#        // SVG Size#}
+{#        const width = 1200;#}
+{#        const height = 800;#}
+{##}
+{#        let firstTime = true;#}
+{##}
+{#        const svg = d3.select("#mesh-network-svg")#}
+{#                      .attr("width", width)#}
+{#                      .attr("height", height)#}
+{#                      .append("g")#}
+{#                      .attr("transform", "translate(50,50)");#}
+{##}
+{#        const tooltip = d3.select(".tooltip");#}
+{##}
+{#        // Define Graph#}
+{#        const simulation = d3.forceSimulation()#}
+{#                             .force("link", d3.forceLink().id(d => d.id).distance(200))#}
+{#                             .force("charge", d3.forceManyBody().strength(-200))#}
+{#                             .force("center", d3.forceCenter(width / 2 - 50, height / 2 - 200))#}
+{#                             .force("collision", d3.forceCollide().radius(50)); // prevent overlap#}
+{##}
+{#        let link = svg.append("g")#}
+{#                      .attr("class", "links")#}
+{#                      .selectAll("line");#}
+{##}
+{#        let node = svg.append("g")#}
+{#                      .attr("class", "nodes")#}
+{#                      .selectAll("g");#}
+{##}
+{#        function renderMeshNetwork(data) {#}
+{#            console.log("Rendering Mesh Network:", data);#}
+{##}
+{#            const nodes = data.nodes;#}
+{#            const links = data.links;#}
+{##}
+{#            console.log("Nodes:", nodes);#}
+{#            console.log("Links:", links);#}
+{##}
+{#            // Update links#}
+{#            link = link.data(links, d => `${d.source}-${d.target}`);#}
+{##}
+{#            // Remove old links#}
+{#            link.exit().remove();#}
+{##}
+{#            // Add new links#}
+{#            link = link.enter().append("line")#}
+{#                       .attr("stroke-width", d => Math.max(Math.abs(d.rssi) / 10, 1))#}
+{#                       .attr("stroke", d => {#}
+{#                           const rssi = d.rssi;#}
+{#                           if (rssi > -50) {#}
+{#                               return "green";#}
+{#                           } else if (rssi > -80) {#}
+{#                               return "orange";#}
+{#                           } else {#}
+{#                               return "red";#}
+{#                           }#}
+{#                       })#}
+{#                       .merge(link);#}
+{##}
+{#            // Update nodes#}
+{#            node = node.data(nodes, d => d.id);#}
+{##}
+{#            // Remove old nodes#}
+{#            node.exit().remove();#}
+{##}
+{#            // Add new nodes#}
+{#            const nodeEnter = node.enter().append("g")#}
+{#                                   .call(d3.drag()#}
+{#                                       .on("start", dragstarted)#}
+{#                                       .on("drag", dragged)#}
+{#                                       .on("end", dragended));#}
+{##}
+{#            nodeEnter.append("circle")#}
+{#                     .attr("r", 10)#}
+{#                     .attr("fill", "steelblue");#}
+{##}
+{#            nodeEnter.append("text")#}
+{#                     .attr("dx", 15)#}
+{#                     .attr("dy", ".35em")#}
+{#                     .text(d => d.name);#}
+{##}
+{#            // Mouse Events#}
+{#            nodeEnter.on("mouseover", function(event, d) {#}
+{#                    tooltip.transition()#}
+{#                        .duration(200)#}
+{#                        .style("opacity", .9);#}
+{#                    tooltip.html(d.name)#}
+{#                        .style("left", (event.pageX + 10) + "px")#}
+{#                        .style("top", (event.pageY - 28) + "px");#}
+{#                })#}
+{#                .on("mouseout", function(d) {#}
+{#                    tooltip.transition()#}
+{#                        .duration(500)#}
+{#                        .style("opacity", 0);#}
+{#                });#}
+{##}
+{#            node = nodeEnter.merge(node);#}
+{##}
+{#            // Update simulation#}
+{#            simulation.nodes(nodes).on("tick", ticked);#}
+{#            simulation.force("link").links(links);#}
+{##}
+{#            if (firstTime) {#}
+{#                simulation.alpha(1).restart();#}
+{#                firstTime = false;#}
+{#            } else {#}
+{#                simulation.alpha(1).restart();#}
+{#            }#}
+{#        }#}
+{##}
+{#        // Tick function#}
+{#        function ticked() {#}
+{#            console.log("Tick event");#}
+{#            link.attr("x1", d => d.source.x)#}
+{#                .attr("y1", d => d.source.y)#}
+{#                .attr("x2", d => d.target.x)#}
+{#                .attr("y2", d => d.target.y);#}
+{##}
+{#            node.attr("transform", d => `translate(${d.x},${d.y})`);#}
+{##}
+{#            node.each(function(d) {#}
+{#                console.log(`Node ${d.id}: (${d.x}, ${d.y})`);#}
+{#            });#}
+{#        }#}
+{##}
+{#        // Drag functions#}
+{#        function dragstarted(event, d) {#}
+{#            if (!event.active) simulation.alphaTarget(0.3).restart();#}
+{#            d.fx = d.x;#}
+{#            d.fy = d.y;#}
+{#        }#}
+{##}
+{#        function dragged(event, d) {#}
+{#            d.fx = event.x;#}
+{#            d.fy = event.y;#}
+{#        }#}
+{##}
+{#        function dragended(event, d) {#}
+{#            if (!event.active) simulation.alphaTarget(0);#}
+{#            d.fx = null;#}
+{#            d.fy = null;#}
+{#        }#}
+{##}
+{#        // Fetch Mesh Network Data#}
+{#        function fetchMeshNetwork() {#}
+{#            fetch('/mesh-network-data/')#}
+{#                .then(response => response.json())#}
+{#                .then(data => {#}
+{#                    renderMeshNetwork(data);#}
+{#                })#}
+{#                .catch(error => {#}
+{#                    console.error('Error fetching mesh network data:', error);#}
+{#                });#}
+{#        }#}
+{##}
+{#        // Initial fetch#}
+{#        fetchMeshNetwork();#}
+{##}
+{#        setInterval(fetchMeshNetwork, 5000);#}
+{#    </script>#}
+{##}
+{#{% endblock canvas %}#}
+{##}

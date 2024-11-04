@@ -5,11 +5,13 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from apps.management.models import Device
-from apps.widgets.models import DeviceData
+from apps.management.onem2m_service import logger
+from apps.widgets.models import DeviceData, MeshConnectivity
 from core.decorators import superuser_required
 
-
-# Create your views here.
+"""
+MAP Widget
+"""
 @login_required(login_url="/login/")
 @superuser_required
 def device_map(request):
@@ -31,11 +33,26 @@ def device_map(request):
     context = {'devices': devices_data}
     return render(request, 'widgets/map.html', context)
 
+
+"""
+LOG Widget
+"""
 @login_required(login_url="/login/")
 @superuser_required
 def device_logs(request):
     return render(request, 'widgets/logs.html')
 
+"""
+MESH Widget
+"""
+@login_required(login_url="/login/")
+@superuser_required
+def device_mesh(request):
+    return render(request, 'widgets/mesh_tree.html')
+
+"""
+Data API
+"""
 def device_path(request, device_id):
     data = DeviceData.objects.filter(device_id=device_id).order_by('timestamp')
     # if data exist，return latest position
@@ -87,3 +104,35 @@ def device_data(request):
         return JsonResponse({'status': 'success', 'data': data_list}, status=200)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+def mesh_network_data(request):
+    try:
+        devices = Device.objects.all()
+        mesh_connections = MeshConnectivity.objects.all()
+
+        nodes = []
+        links = []
+
+        device_map = {device.hardware_id: device.name for device in devices}
+
+        # Add all device as Node
+        for device in devices:
+            nodes.append({
+                'id': device.hardware_id,
+                'name': device.name
+            })
+
+        # Connect each node if data have
+        for connection in mesh_connections:
+            if connection.parent_id:
+                links.append({
+                    'source': connection.device.hardware_id,
+                    'target': connection.parent_id,
+                    'rssi': connection.rssi
+                })
+
+        return JsonResponse({'nodes': nodes, 'links': links}, status=200)
+
+    except Exception as e:
+        logger.error(f"Error in mesh_network_api: {e}")
+        return JsonResponse({'error': 'Internal Server Error'}, status=500)

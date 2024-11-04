@@ -215,7 +215,7 @@ MODULE_MAPPING = {
     "meshConnectivity": {
         "short_name": "bdm:msCoy",
         "attributes": {
-            "neibo": "Neighbor ID",
+            "neibo": "sink",
             "rssi": 0
         },
         "cnd_type": "bike",
