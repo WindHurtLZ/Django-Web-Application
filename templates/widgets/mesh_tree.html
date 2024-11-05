@@ -11,11 +11,6 @@
         .node text {
             font: 12px sans-serif;
         }
-        .link {
-            fill: none;
-            stroke: #ccc;
-            stroke-width: 2px;
-        }
         .tooltip {
             position: absolute;
             text-align: center;
@@ -61,18 +56,18 @@
     const tooltip = d3.select(".tooltip");
 
     const rssiToDistance = d3.scaleLinear()
-                         .domain([-100, -30]) // 假设RSSI值在-100到-30之间
-                         .range([500, 100])   // 距离在500到100之间
+                         .domain([-100, -30])
+                         .range([500, 100])
                          .clamp(true);
 
     // Arrow marker for direction with fixed size
     svg.append("defs").append("marker")
        .attr("id", "arrow")
        .attr("viewBox", "0 -5 10 10")
-       .attr("refX", 15)  // 控制箭头离线的距离
+       .attr("refX", 15)
        .attr("refY", 0)
-       .attr("markerWidth", 4)  // 固定箭头宽度
-       .attr("markerHeight", 4)  // 固定箭头高度
+       .attr("markerWidth", 4)
+       .attr("markerHeight", 4)
        .attr("orient", "auto")
        .append("path")
        .attr("d", "M0,-5L10,0L0,5")
@@ -132,7 +127,9 @@
 
         nodeEnter.append("circle")
                  .attr("r", 10)
-                 .attr("fill", "steelblue");
+                 .attr("fill", function(d) {
+                     return d.id === 'sink' ? "purple" : "steelblue";
+                });
 
         nodeEnter.append("text")
                  .attr("dx", 15)
@@ -154,6 +151,17 @@
             });
 
         node = nodeEnter.merge(node);
+        
+        // fix "sink" position
+        nodes.forEach(function(d) {
+            if (d.id === 'sink') {
+                d.fx = width / 2;
+                d.fy = height / 2 - 50;
+            } else {
+                d.fx = null;
+                d.fy = null;
+            }
+        });
 
         // Update simulation
         simulation.nodes(nodes).on("tick", ticked);

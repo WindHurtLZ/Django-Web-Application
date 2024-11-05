@@ -116,7 +116,6 @@ POLLING_TIMEOUT = 30
 def mesh_network_data(request):
     global last_update_time
     try:
-        # 获取客户端传递的 last_update 参数，如果没有则设置为0
         client_last_update = float(request.GET.get('last_update', '0'))
 
         start_time = time.time()
@@ -125,23 +124,26 @@ def mesh_network_data(request):
             current_last_update = last_update_time.timestamp()
 
             if current_last_update > client_last_update:
-                # 数据已更新，返回新的数据
+                # update and return nodes
                 devices = Device.objects.all()
                 mesh_connections = MeshConnectivity.objects.all()
 
                 nodes = []
                 links = []
 
-                device_map = {device.hardware_id: device.name for device in devices}
+                # add 'sink' node
+                nodes.append({
+                    'id': 'sink',
+                    'name': 'ACME'
+                })
 
-                # 添加所有设备为节点
+                # add all device as node
                 for device in devices:
                     nodes.append({
                         'id': device.hardware_id,
                         'name': device.name
                     })
 
-                # 连接每个节点（如果有数据）
                 for connection in mesh_connections:
                     if connection.parent_id:
                         links.append({
@@ -158,12 +160,10 @@ def mesh_network_data(request):
                 return JsonResponse(response)
 
             elif time.time() - start_time > POLLING_TIMEOUT:
-                # 超时，返回空响应
                 response = {'last_update': current_last_update}
                 return JsonResponse(response)
 
             else:
-                # 等待一段时间后继续检查
                 time.sleep(1)
 
     except Exception as e:
