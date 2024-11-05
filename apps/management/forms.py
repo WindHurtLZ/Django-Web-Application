@@ -22,3 +22,7 @@ class DeviceForm(forms.ModelForm):
         if not hardware_id.isdigit() or len(hardware_id) != 5:
             raise forms.ValidationError("Hardware ID must be exactly 5 digits.")
         return hardware_id
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['type'].initial = 'CoAP'
