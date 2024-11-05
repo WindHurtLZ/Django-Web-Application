@@ -1,8 +1,11 @@
+import time
+
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import condition
 
 from apps.management.models import Device
 from apps.management.onem2m_service import logger
@@ -105,34 +108,64 @@ def device_data(request):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
+
+last_update_time = timezone.now()
+POLLING_TIMEOUT = 30
+
+@csrf_exempt
 def mesh_network_data(request):
+    global last_update_time
     try:
-        devices = Device.objects.all()
-        mesh_connections = MeshConnectivity.objects.all()
+        # 获取客户端传递的 last_update 参数，如果没有则设置为0
+        client_last_update = float(request.GET.get('last_update', '0'))
 
-        nodes = []
-        links = []
+        start_time = time.time()
 
-        device_map = {device.hardware_id: device.name for device in devices}
+        while True:
+            current_last_update = last_update_time.timestamp()
 
-        # Add all device as Node
-        for device in devices:
-            nodes.append({
-                'id': device.hardware_id,
-                'name': device.name
-            })
+            if current_last_update > client_last_update:
+                # 数据已更新，返回新的数据
+                devices = Device.objects.all()
+                mesh_connections = MeshConnectivity.objects.all()
 
-        # Connect each node if data have
-        for connection in mesh_connections:
-            if connection.parent_id:
-                links.append({
-                    'source': connection.device.hardware_id,
-                    'target': connection.parent_id,
-                    'rssi': connection.rssi
-                })
+                nodes = []
+                links = []
 
-        return JsonResponse({'nodes': nodes, 'links': links}, status=200)
+                device_map = {device.hardware_id: device.name for device in devices}
+
+                # 添加所有设备为节点
+                for device in devices:
+                    nodes.append({
+                        'id': device.hardware_id,
+                        'name': device.name
+                    })
+
+                # 连接每个节点（如果有数据）
+                for connection in mesh_connections:
+                    if connection.parent_id:
+                        links.append({
+                            'source': connection.device.hardware_id,
+                            'target': connection.parent_id,
+                            'rssi': connection.rssi
+                        })
+
+                response = {
+                    'nodes': nodes,
+                    'links': links,
+                    'last_update': current_last_update
+                }
+                return JsonResponse(response)
+
+            elif time.time() - start_time > POLLING_TIMEOUT:
+                # 超时，返回空响应
+                response = {'last_update': current_last_update}
+                return JsonResponse(response)
+
+            else:
+                # 等待一段时间后继续检查
+                time.sleep(1)
 
     except Exception as e:
-        logger.error(f"Error in mesh_network_api: {e}")
+        print(f"Error in mesh_network_data: {e}")
         return JsonResponse({'error': 'Internal Server Error'}, status=500)

@@ -198,22 +198,26 @@
         d.fy = null;
     }
 
+    let lastUpdate = 0
     // Fetch Mesh Network Data
     function fetchMeshNetwork() {
-        fetch('/mesh-network-data/')
+        fetch(`/mesh-network-data/?last_update=${lastUpdate}`)
             .then(response => response.json())
             .then(data => {
-                renderMeshNetwork(data);
+                if (data.nodes && data.links) {
+                    renderMeshNetwork(data);
+                }
+                lastUpdate = data.last_update || lastUpdate;
+                fetchMeshNetwork();
             })
             .catch(error => {
                 console.error('Error fetching mesh network data:', error);
+                setTimeout(fetchMeshNetwork, 5000);
             });
     }
 
     // Initial fetch
     fetchMeshNetwork();
-
-    setInterval(fetchMeshNetwork, 5000);
 </script>
 
 {% endblock canvas %}
