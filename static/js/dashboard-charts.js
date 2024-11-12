@@ -16,7 +16,7 @@ const hexToRGB = (h) => {
 };
 
 const formatValue = (value) => {
-  return `${value.toFixed(0)}`;  // 格式化为带有 km/h 的车速
+  return `${value.toFixed(0)}`;  // km/h
 };
 
 // Define Chart.js default settings
@@ -60,7 +60,7 @@ const dashboardCard01 = () => {
     light: '#f8fafc',
     dark: `rgba(${hexToRGB('#0F172A')}, 0.24)`
   };
-  
+
   const tooltipBodyColor = {
     light: '#1e293b',
     dark: '#f1f5f9'
@@ -110,7 +110,7 @@ const dashboardCard01 = () => {
           pointBackgroundColor: '#6366f1',
           pointHoverBackgroundColor: '#6366f1',
           pointBorderWidth: 0,
-          pointHoverBorderWidth: 0,          
+          pointHoverBorderWidth: 0,
           clip: 20,
         },
         // Gray line
@@ -181,7 +181,7 @@ const dashboardCard01 = () => {
       chart.options.plugins.tooltip.bodyColor = tooltipBodyColor.dark;
       chart.options.plugins.tooltip.backgroundColor = tooltipBgColor.dark;
       chart.options.plugins.tooltip.borderColor = tooltipBorderColor.dark;
-    } else {     
+    } else {
       chart.options.chartArea.backgroundColor = chartAreaBg.light;
       chart.options.plugins.tooltip.bodyColor = tooltipBodyColor.light;
       chart.options.plugins.tooltip.backgroundColor = tooltipBgColor.light;
@@ -203,7 +203,7 @@ const dashboardCard02 = () => {
     light: '#f8fafc',
     dark: `rgba(${hexToRGB('#0F172A')}, 0.24)`
   };
-  
+
   const tooltipBodyColor = {
     light: '#1e293b',
     dark: '#f1f5f9'
@@ -217,8 +217,8 @@ const dashboardCard02 = () => {
   const tooltipBorderColor = {
     light: '#e2e8f0',
     dark: '#475569'
-  };   
-  
+  };
+
   // eslint-disable-next-line no-unused-vars
   const chart = new Chart(ctx, {
     type: 'line',
@@ -253,7 +253,7 @@ const dashboardCard02 = () => {
           pointBackgroundColor: '#6366f1',
           pointHoverBackgroundColor: '#6366f1',
           pointBorderWidth: 0,
-          pointHoverBorderWidth: 0,          
+          pointHoverBorderWidth: 0,
           clip: 20,
         },
         // Gray line
@@ -303,7 +303,7 @@ const dashboardCard02 = () => {
           },
           bodyColor: darkMode ? tooltipBodyColor.dark : tooltipBodyColor.light,
           backgroundColor: darkMode ? tooltipBgColor.dark : tooltipBgColor.light,
-          borderColor: darkMode ? tooltipBorderColor.dark : tooltipBorderColor.light,          
+          borderColor: darkMode ? tooltipBorderColor.dark : tooltipBorderColor.light,
         },
         legend: {
           display: false,
@@ -346,7 +346,7 @@ const dashboardCard03 = () => {
     light: '#f8fafc',
     dark: `rgba(${hexToRGB('#0F172A')}, 0.24)`
   };
-  
+
   const tooltipBodyColor = {
     light: '#1e293b',
     dark: '#f1f5f9'
@@ -360,8 +360,8 @@ const dashboardCard03 = () => {
   const tooltipBorderColor = {
     light: '#e2e8f0',
     dark: '#475569'
-  };   
-  
+  };
+
   // eslint-disable-next-line no-unused-vars
   const chart = new Chart(ctx, {
     type: 'line',
@@ -396,7 +396,7 @@ const dashboardCard03 = () => {
           pointBackgroundColor: '#6366f1',
           pointHoverBackgroundColor: '#6366f1',
           pointBorderWidth: 0,
-          pointHoverBorderWidth: 0,          
+          pointHoverBorderWidth: 0,
           clip: 20,
         },
         // Gray line
@@ -446,7 +446,7 @@ const dashboardCard03 = () => {
           },
           bodyColor: darkMode ? tooltipBodyColor.dark : tooltipBodyColor.light,
           backgroundColor: darkMode ? tooltipBgColor.dark : tooltipBgColor.light,
-          borderColor: darkMode ? tooltipBorderColor.dark : tooltipBorderColor.light,          
+          borderColor: darkMode ? tooltipBorderColor.dark : tooltipBorderColor.light,
         },
         legend: {
           display: false,
@@ -489,12 +489,12 @@ const dashboardCard04 = () => {
     light: '#94a3b8',
     dark: '#64748B'
   };
-  
+
   const gridColor = {
     light: '#f1f5f9',
     dark: '#334155'
   };
-  
+
   const tooltipBodyColor = {
     light: '#1e293b',
     dark: '#f1f5f9'
@@ -508,7 +508,7 @@ const dashboardCard04 = () => {
   const tooltipBorderColor = {
     light: '#e2e8f0',
     dark: '#475569'
-  };   
+  };
 
   // eslint-disable-next-line no-unused-vars
   const chart = new Chart(ctx, {
@@ -556,7 +556,7 @@ const dashboardCard04 = () => {
         y: {
           border: {
             display: false,
-          },  
+          },
           ticks: {
             maxTicksLimit: 5,
             callback: (value) => formatValue(value),
@@ -577,13 +577,13 @@ const dashboardCard04 = () => {
           },
           border: {
             display: false,
-          },            
+          },
           grid: {
             display: false,
           },
           ticks: {
             color: darkMode ? textColor.dark : textColor.light,
-          },          
+          },
         },
       },
       plugins: {
@@ -601,7 +601,7 @@ const dashboardCard04 = () => {
           },
           bodyColor: darkMode ? tooltipBodyColor.dark : tooltipBodyColor.light,
           backgroundColor: darkMode ? tooltipBgColor.dark : tooltipBgColor.light,
-          borderColor: darkMode ? tooltipBorderColor.dark : tooltipBorderColor.light,          
+          borderColor: darkMode ? tooltipBorderColor.dark : tooltipBorderColor.light,
         },
       },
       interaction: {
@@ -686,14 +686,14 @@ const dashboardCard04 = () => {
       chart.options.scales.y.grid.color = gridColor.dark;
       chart.options.plugins.tooltip.bodyColor = tooltipBodyColor.dark;
       chart.options.plugins.tooltip.backgroundColor = tooltipBgColor.dark;
-      chart.options.plugins.tooltip.borderColor = tooltipBorderColor.dark;      
+      chart.options.plugins.tooltip.borderColor = tooltipBorderColor.dark;
     } else {
       chart.options.scales.x.ticks.color = textColor.light;
       chart.options.scales.y.ticks.color = textColor.light;
       chart.options.scales.y.grid.color = gridColor.light;
       chart.options.plugins.tooltip.bodyColor = tooltipBodyColor.light;
       chart.options.plugins.tooltip.backgroundColor = tooltipBgColor.light;
-      chart.options.plugins.tooltip.borderColor = tooltipBorderColor.light;      
+      chart.options.plugins.tooltip.borderColor = tooltipBorderColor.light;
     }
     chart.update('none');
   });
@@ -710,13 +710,13 @@ const dashboardCard05 = () => {
   const textColor = {
     light: '#94a3b8',
     dark: '#64748B'
-  }; 
+  };
 
   const gridColor = {
     light: '#f1f5f9',
     dark: '#334155'
   };
-  
+
   const tooltipTitleColor = {
     light: '#1e293b',
     dark: '#f1f5f9'
@@ -731,11 +731,11 @@ const dashboardCard05 = () => {
     light: '#ffffff',
     dark: '#334155'
   };
-  
+
   const tooltipBorderColor = {
     light: '#e2e8f0',
     dark: '#475569'
-  };  
+  };
 
   // Fake real-time data
   const data = [
@@ -779,7 +779,7 @@ const dashboardCard05 = () => {
           pointBackgroundColor: '#6366f1',
           pointHoverBackgroundColor: '#6366f1',
           pointBorderWidth: 0,
-          pointHoverBorderWidth: 0,          
+          pointHoverBorderWidth: 0,
           clip: 20,
         },
       ],
@@ -792,7 +792,7 @@ const dashboardCard05 = () => {
         y: {
           border: {
             display: false,
-          },  
+          },
           suggestedMin: 30,
           suggestedMax: 80,
           ticks: {
@@ -802,7 +802,7 @@ const dashboardCard05 = () => {
           },
           grid: {
             color: darkMode ? gridColor.dark : gridColor.light,
-          },          
+          },
         },
         x: {
           type: 'time',
@@ -816,7 +816,7 @@ const dashboardCard05 = () => {
           },
           border: {
             display: false,
-          },            
+          },
           grid: {
             display: false,
           },
@@ -841,7 +841,7 @@ const dashboardCard05 = () => {
           titleColor: darkMode ? tooltipTitleColor.dark : tooltipTitleColor.light,
           bodyColor: darkMode ? tooltipBodyColor.dark : tooltipBodyColor.light,
           backgroundColor: darkMode ? tooltipBgColor.dark : tooltipBgColor.light,
-          borderColor: darkMode ? tooltipBorderColor.dark : tooltipBorderColor.light,          
+          borderColor: darkMode ? tooltipBorderColor.dark : tooltipBorderColor.light,
         },
       },
       interaction: {
@@ -910,7 +910,7 @@ const dashboardCard05 = () => {
       chart.options.plugins.tooltip.borderColor = tooltipBorderColor.light;
     }
     chart.update('none');
-  });  
+  });
 };
 dashboardCard05();
 
@@ -939,7 +939,7 @@ const dashboardCard06 = () => {
   const tooltipBorderColor = {
     light: '#e2e8f0',
     dark: '#475569'
-  }; 
+  };
 
   // eslint-disable-next-line no-unused-vars
   const chart = new Chart(ctx, {
@@ -984,7 +984,7 @@ const dashboardCard06 = () => {
           bodyColor: darkMode ? tooltipBodyColor.dark : tooltipBodyColor.light,
           backgroundColor: darkMode ? tooltipBgColor.dark : tooltipBgColor.light,
           borderColor: darkMode ? tooltipBorderColor.dark : tooltipBorderColor.light,
-        },        
+        },
       },
       interaction: {
         intersect: false,
@@ -1041,22 +1041,22 @@ const dashboardCard06 = () => {
       },
     }],
   });
-  
+
   document.addEventListener('darkMode', (e) => {
     const { mode } = e.detail;
     if (mode === 'on') {
       chart.options.plugins.tooltip.titleColor = tooltipTitleColor.dark;
       chart.options.plugins.tooltip.bodyColor = tooltipBodyColor.dark;
       chart.options.plugins.tooltip.backgroundColor = tooltipBgColor.dark;
-      chart.options.plugins.tooltip.borderColor = tooltipBorderColor.dark;      
+      chart.options.plugins.tooltip.borderColor = tooltipBorderColor.dark;
     } else {
       chart.options.plugins.tooltip.titleColor = tooltipTitleColor.light;
       chart.options.plugins.tooltip.bodyColor = tooltipBodyColor.light;
       chart.options.plugins.tooltip.backgroundColor = tooltipBgColor.light;
-      chart.options.plugins.tooltip.borderColor = tooltipBorderColor.light;      
+      chart.options.plugins.tooltip.borderColor = tooltipBorderColor.light;
     }
     chart.update('none');
-  }); 
+  });
 };
 dashboardCard06();
 
@@ -1071,12 +1071,12 @@ const dashboardCard08 = () => {
     light: '#94a3b8',
     dark: '#64748B'
   };
-  
+
   const gridColor = {
     light: '#f1f5f9',
     dark: '#334155'
   };
-  
+
   const tooltipBodyColor = {
     light: '#1e293b',
     dark: '#f1f5f9'
@@ -1090,7 +1090,7 @@ const dashboardCard08 = () => {
   const tooltipBorderColor = {
     light: '#e2e8f0',
     dark: '#475569'
-  };   
+  };
 
   // eslint-disable-next-line no-unused-vars
   const chart = new Chart(ctx, {
@@ -1123,7 +1123,7 @@ const dashboardCard08 = () => {
           tension: 0,
           pointRadius: 0,
           pointHoverRadius: 3,
-          pointBackgroundColor: '#6366f1',    
+          pointBackgroundColor: '#6366f1',
           pointHoverBackgroundColor: '#6366f1',
           pointBorderWidth: 0,
           pointHoverBorderWidth: 0,
@@ -1182,7 +1182,7 @@ const dashboardCard08 = () => {
           beginAtZero: true,
           border: {
             display: false,
-          },  
+          },
           ticks: {
             maxTicksLimit: 5,
             callback: (value) => formatValue(value),
@@ -1190,7 +1190,7 @@ const dashboardCard08 = () => {
           },
           grid: {
             color: darkMode ? gridColor.dark : gridColor.light,
-          },          
+          },
         },
         x: {
           type: 'time',
@@ -1203,7 +1203,7 @@ const dashboardCard08 = () => {
           },
           border: {
             display: false,
-          },            
+          },
           grid: {
             display: false,
           },
@@ -1211,7 +1211,7 @@ const dashboardCard08 = () => {
             autoSkipPadding: 48,
             maxRotation: 0,
             color: darkMode ? textColor.dark : textColor.light,
-          },      
+          },
         },
       },
       plugins: {
@@ -1229,7 +1229,7 @@ const dashboardCard08 = () => {
           },
           bodyColor: darkMode ? tooltipBodyColor.dark : tooltipBodyColor.light,
           backgroundColor: darkMode ? tooltipBgColor.dark : tooltipBgColor.light,
-          borderColor: darkMode ? tooltipBorderColor.dark : tooltipBorderColor.light,          
+          borderColor: darkMode ? tooltipBorderColor.dark : tooltipBorderColor.light,
         },
       },
       interaction: {
@@ -1296,14 +1296,14 @@ const dashboardCard08 = () => {
       chart.options.scales.y.grid.color = gridColor.dark;
       chart.options.plugins.tooltip.bodyColor = tooltipBodyColor.dark;
       chart.options.plugins.tooltip.backgroundColor = tooltipBgColor.dark;
-      chart.options.plugins.tooltip.borderColor = tooltipBorderColor.dark;      
+      chart.options.plugins.tooltip.borderColor = tooltipBorderColor.dark;
     } else {
       chart.options.scales.x.ticks.color = textColor.light;
       chart.options.scales.y.ticks.color = textColor.light;
       chart.options.scales.y.grid.color = gridColor.light;
       chart.options.plugins.tooltip.bodyColor = tooltipBodyColor.light;
       chart.options.plugins.tooltip.backgroundColor = tooltipBgColor.light;
-      chart.options.plugins.tooltip.borderColor = tooltipBorderColor.light;      
+      chart.options.plugins.tooltip.borderColor = tooltipBorderColor.light;
     }
     chart.update('none');
   });
@@ -1321,12 +1321,12 @@ const dashboardCard09 = () => {
     light: '#94a3b8',
     dark: '#64748B'
   };
-  
+
   const gridColor = {
     light: '#f1f5f9',
     dark: '#334155'
   };
-  
+
   const tooltipBodyColor = {
     light: '#1e293b',
     dark: '#f1f5f9'
@@ -1340,7 +1340,7 @@ const dashboardCard09 = () => {
   const tooltipBorderColor = {
     light: '#e2e8f0',
     dark: '#475569'
-  };   
+  };
 
   // eslint-disable-next-line no-unused-vars
   const chart = new Chart(ctx, {
@@ -1389,7 +1389,7 @@ const dashboardCard09 = () => {
           stacked: true,
           border: {
             display: false,
-          },  
+          },
           beginAtZero: true,
           ticks: {
             maxTicksLimit: 5,
@@ -1398,7 +1398,7 @@ const dashboardCard09 = () => {
           },
           grid: {
             color: darkMode ? gridColor.dark : gridColor.light,
-          },          
+          },
         },
         x: {
           stacked: true,
@@ -1412,7 +1412,7 @@ const dashboardCard09 = () => {
           },
           border: {
             display: false,
-          },            
+          },
           grid: {
             display: false,
           },
@@ -1420,7 +1420,7 @@ const dashboardCard09 = () => {
             autoSkipPadding: 48,
             maxRotation: 0,
             color: darkMode ? textColor.dark : textColor.light,
-          },         
+          },
         },
       },
       plugins: {
@@ -1434,7 +1434,7 @@ const dashboardCard09 = () => {
           },
           bodyColor: darkMode ? tooltipBodyColor.dark : tooltipBodyColor.light,
           backgroundColor: darkMode ? tooltipBgColor.dark : tooltipBgColor.light,
-          borderColor: darkMode ? tooltipBorderColor.dark : tooltipBorderColor.light,          
+          borderColor: darkMode ? tooltipBorderColor.dark : tooltipBorderColor.light,
         },
       },
       interaction: {
@@ -1468,4 +1468,4 @@ const dashboardCard09 = () => {
     chart.update('none');
   });
 };
-dashboardCard09();    
+dashboardCard09();

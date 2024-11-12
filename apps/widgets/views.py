@@ -1,16 +1,17 @@
 import time
+from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render
-from django.utils import timezone
+from django.shortcuts import render, get_object_or_404
+from django.utils import timezone, dateparse
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import condition
 
 from apps.management.models import Device
 from apps.management.onem2m_service import logger
 from apps.widgets.models import DeviceData, MeshConnectivity
 from core.decorators import superuser_required
+from datetime import timezone as dt_timezone
 
 """
 MAP Widget
@@ -169,3 +170,50 @@ def mesh_network_data(request):
     except Exception as e:
         print(f"Error in mesh_network_data: {e}")
         return JsonResponse({'error': 'Internal Server Error'}, status=500)
+
+
+@csrf_exempt
+def device_speed_data(request, device_id):
+    if request.method == 'GET':
+        device = get_object_or_404(Device, id=device_id)
+        data_points = device.data.order_by('-timestamp')[:10]  # 10 data from recent
+        data = [
+            {
+                'timestamp': data_point.timestamp.isoformat(),
+                'speed': data_point.speed
+            } for data_point in reversed(data_points)  # time sequence
+        ]
+        return JsonResponse({'status': 'success', 'data': data}, status=200)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+
+@csrf_exempt
+def device_latest_speed(request, device_id):
+    if request.method == 'GET':
+        device = get_object_or_404(Device, id=device_id)
+        since_timestamp_str = request.GET.get('since')
+        latest_data = device.data.last()
+        if latest_data:
+            data_timestamp = latest_data.timestamp
+            if since_timestamp_str:
+                since_timestamp = dateparse.parse_datetime(since_timestamp_str)
+                if since_timestamp is not None:
+                    if timezone.is_naive(since_timestamp):
+
+                        since_timestamp = timezone.make_aware(since_timestamp, timezone.get_current_timezone())
+                    # translate to UTC
+                    data_timestamp_utc = data_timestamp.astimezone(dt_timezone.utc)
+                    since_timestamp_utc = since_timestamp.astimezone(dt_timezone.utc)
+
+                    if data_timestamp_utc <= since_timestamp_utc:
+                        return JsonResponse({'status': 'no_new_data'}, status=200)
+                else:
+                    return JsonResponse({'status': 'error', 'message': 'Invalid timestamp format'}, status=400)
+            data = {
+                'timestamp': data_timestamp.isoformat(),
+                'speed': latest_data.speed
+            }
+            return JsonResponse({'status': 'success', 'data': data}, status=200)
+        else:
+            return JsonResponse({'status': 'error', 'message': 'No data found for device'}, status=404)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
