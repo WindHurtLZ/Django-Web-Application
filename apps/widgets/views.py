@@ -134,7 +134,7 @@ def mesh_network_data(request):
 
                 # add 'sink' node
                 nodes.append({
-                    'id': 'sink',
+                    'id': '00000',
                     'name': 'ACME'
                 })
 
@@ -150,7 +150,7 @@ def mesh_network_data(request):
                         links.append({
                             'source': connection.device.hardware_id,
                             'target': connection.parent_id,
-                            'rssi': connection.rssi
+                            'stnr': connection.stnr
                         })
 
                 response = {

@@ -55,9 +55,9 @@
 
     const tooltip = d3.select(".tooltip");
 
-    const rssiToDistance = d3.scaleLinear()
-                         .domain([-100, -30])
-                         .range([500, 100])
+    const stnrToDistance = d3.scaleLinear()
+                         .domain([0, 256])
+                         .range([400, 100])
                          .clamp(true);
 
     // Arrow marker for direction with fixed size
@@ -74,7 +74,7 @@
        .attr("fill", "#hhh");
 
     const simulation = d3.forceSimulation()
-                         .force("link", d3.forceLink().id(d => d.id).distance(d => rssiToDistance(d.rssi)))
+                         .force("link", d3.forceLink().id(d => d.id).distance(d => stnrToDistance(d.stnr)))
                          .force("charge", d3.forceManyBody().strength(-200))
                          .force("center", d3.forceCenter(width / 2, height / 2 - 50))
                          .force("collision", d3.forceCollide().radius(50));
@@ -101,20 +101,20 @@
         link = link.enter().append("line")
                    .attr("stroke-width", d => 3)
                    .attr("stroke", d => {
-                       const rssi = d.rssi;
-                       return rssi > -50 ? "green" : rssi > -80 ? "orange" : "red";
+                       const stnr = d.stnr;
+                       return stnr > 120 ? "green" : stnr > 60 ? "orange" : "red";
                    })
                    .attr("marker-end", "url(#arrow)")
                    .merge(link);
 
-        // Update RSSI text on links
+        // Update stnr text on links
         linkText = linkText.data(links, d => `${d.source}-${d.target}`);
         linkText.exit().remove();
         linkText = linkText.enter().append("text")
                     .attr("dy", -5)
                     .attr("text-anchor", "middle")
                     .merge(linkText)
-                    .text(d => `${d.rssi}`);
+                    .text(d => `${d.stnr}`);
 
         // Update nodes
         node = node.data(nodes, d => d.id);
@@ -128,7 +128,7 @@
         nodeEnter.append("circle")
                  .attr("r", 10)
                  .attr("fill", function(d) {
-                     return d.id === 'sink' ? "purple" : "steelblue";
+                     return d.id === '00000' ? "purple" : "steelblue";
                 });
 
         nodeEnter.append("text")
@@ -152,9 +152,9 @@
 
         node = nodeEnter.merge(node);
         
-        // fix "sink" position
+        // fix "ACME" position
         nodes.forEach(function(d) {
-            if (d.id === 'sink') {
+            if (d.id === '00000') {
                 d.fx = width / 2;
                 d.fy = height / 2 - 50;
             } else {

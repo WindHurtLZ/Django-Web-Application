@@ -19,7 +19,7 @@ class DeviceData(models.Model):
 class MeshConnectivity(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE, related_name='mesh_connectivity')
     parent_id = models.CharField(max_length=100, null=True, blank=True)
-    rssi = models.IntegerField(null=True, blank=True)
+    stnr = models.IntegerField(null=True, blank=True)
     last_updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):

@@ -63,10 +63,10 @@
                 "car" : "1"
             },
 
-            // DataPoint: rssi
+            // DataPoint: stnr
             {
-                "sname" : "rssi",
-                "lname" : "rssi",
+                "sname" : "stnr",
+                "lname" : "stnr",
                 "type" : "integer",
                 "car" : "01"
             }

@@ -10,7 +10,7 @@ class DeviceDataAdmin(admin.ModelAdmin):
 
 @admin.register(MeshConnectivity)
 class MeshConnectivityAdmin(admin.ModelAdmin):
-    list_display = ('device', 'parent_id', 'rssi', 'last_updated')
+    list_display = ('device', 'parent_id', 'stnr', 'last_updated')
 
 @admin.register(Battery)
 class BatteryAdmin(admin.ModelAdmin):

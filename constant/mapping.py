@@ -215,8 +215,8 @@ MODULE_MAPPING = {
     "meshConnectivity": {
         "short_name": "bdm:msCoy",
         "attributes": {
-            "neibo": "sink",
-            "rssi": 0
+            "neibo": "00000",
+            "stnr": 0
         },
         "cnd_type": "bike",
         "domain": "onem2m",

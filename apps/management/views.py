@@ -208,11 +208,11 @@ def process_mesh_connectivity(data):
         return
 
     parent_id = data.get('neibo')
-    rssi = data.get('rssi')
+    stnr = data.get('stnr')
 
     mesh_connectivity, created = MeshConnectivity.objects.get_or_create(device=device)
     mesh_connectivity.parent_id = parent_id
-    mesh_connectivity.rssi = rssi
+    mesh_connectivity.stnr = stnr
     mesh_connectivity.save()
 
     logger.info(f"MeshConnectivity updated for device '{device.name}': {data}")
