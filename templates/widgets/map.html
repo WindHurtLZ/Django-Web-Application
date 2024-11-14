@@ -4,6 +4,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
     <style>
         html, body, #map {
             height: 100%;
@@ -22,6 +23,7 @@
             border-radius: 5px;
             cursor: pointer;
             z-index: 1000; /* Ensure it's above the map */
+            margin-right: 10px;
         }
         /* Position the simulation button at the bottom left of the map */
         .simulate-btn {
@@ -30,17 +32,48 @@
             left: 20px;
             z-index: 1000;
         }
+        .control-btns {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 8px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        .link {
+            stroke-width: 3px;
+        }
+        .link-label {
+            font-size: 16px;
+            fill: black;
+            pointer-events: none;
+            text-anchor: middle;
+            alignment-baseline: middle;
+            background: white;
+        }
     </style>
 {% endblock load %}
 
 {% block canvas %}
 <main class="grow" style="height: 100vh; padding: 0; margin: 0;">
     <div style="position: relative; height: 100%;">
-        <!-- Simulation Button -->
-        <button id="simulate-btn" class="btn simulate-btn" onclick="toggleSimulation()">Start Simulation</button>
+        <!-- Control Buttons -->
+        <div class="control-btns">
+            <button id="tracking-btn" class="btn" onclick="switchToTracking()">Tracking</button>
+            <button id="signal-btn" class="btn" onclick="switchToSignal()">Signal</button>
+        </div>
 
         <!-- Map Container -->
         <div id="map"></div>
+        <div class="tooltip" style="opacity:0;"></div>
     </div>
 </main>
 
@@ -50,14 +83,66 @@
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Custom Control Button
+    // Add SVG for mesh visualization
+    L.svg().addTo(map);
+    const svg = d3.select("#map").select("svg");
+    const g = svg.append("g").attr("class", "leaflet-zoom-hide");
+
+    // Arraw Icon
+    svg.append("defs").append("marker")
+        .attr("id", "arrowhead")
+        .attr("viewBox", "-0 -5 10 10")
+        .attr("refX", 13) // 调整箭头位置
+        .attr("refY", 0)
+        .attr("orient", "auto")
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("xoverflow", "visible")
+        .append("svg:path")
+            .attr("d", "M 0,-5 L 10 ,0 L 0,5")
+            .attr("fill", "#000")
+            .style("stroke","none");
+
+    const tooltip = d3.select(".tooltip");
+
+    // 当前模式：'tracking' 或 'signal'
+    var currentMode = 'tracking';
+
+    // 当前追踪的设备
+    var activeDeviceId = null;
+    var trackPathInterval = null;
+    var globalUpdateInterval = null;
+
+    // 获取当前位置
+    var currentLocationMarker = null;
+    function goToCurrentLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+
+                map.setView([lat, lng], 13);  // 移动视图
+                if (!currentLocationMarker) {
+                    currentLocationMarker = L.marker([lat, lng]).addTo(map).bindPopup("You are here").openPopup();
+                } else {
+                    currentLocationMarker.setLatLng([lat, lng]).openPopup();
+                }
+            }, function () {
+                alert("Unable to retrieve your location");
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    }
+
+    // Button
     var locateControl = L.Control.extend({
         options: { position: 'topright' },  //
 
         onAdd: function(map) {
             var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
 
-            // add icon Unicode
+            // Icon
             container.innerHTML = '<i class="fas fa-location-arrow"></i>';
             container.style.backgroundColor = 'white';
             container.style.width = '30px';
@@ -76,63 +161,75 @@
     });
     map.addControl(new locateControl());
 
-    // Current tracking device
-    var activeDeviceId = null;
-    var trackPathInterval = null;
-    var globalUpdateInterval = null;
+    var deviceMarkers = {}; // Store Marker based on Device ID
+    var devices = {{ devices|safe }};
+    var nodes = [];
+    var links = [];
 
-    // Get Current Location
-    var currentLocationMarker = null;
-    function goToCurrentLocation() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function (position) {
-                var lat = position.coords.latitude;
-                var lng = position.coords.longitude;
-                
-                map.setView([lat, lng], 13);  // move view
-                if (!currentLocationMarker) {
-                    currentLocationMarker = L.marker([lat, lng]).addTo(map).bindPopup("You are here").openPopup();
-                } else {
-                    currentLocationMarker.setLatLng([lat, lng]).openPopup();
-                }
-            }, function () {
-                alert("Unable to retrieve your location");
-            });
-        } else {
-            alert("Geolocation is not supported by this browser.");
+    // sink node Icon
+    var sinkIcon = L.icon({
+        iconUrl: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png', // Google Icon
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32],
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        shadowSize: [41, 41]
+    });
+
+    // Render sink node
+    var sinkMarker = null;
+    function renderSinkNode() {
+        if (!sinkMarker) {
+            // 找到sink node在nodes数组中的数据
+            const sinkNode = nodes.find(node => node.id === '00000');
+            if (sinkNode) {
+                sinkMarker = L.marker([sinkNode.latitude, sinkNode.longitude], { icon: sinkIcon }).addTo(map)
+                    .bindPopup("<b>ACME</b>");
+            }
         }
     }
 
-    var deviceMarkers = {}; // Store Marker by device ID
-    // Render all device to the maps
-    var devices = {{ devices|safe }};
-    devices.forEach(function(device) {
-        var deviceLat = device.latitude;
-        var deviceLng = device.longitude;
+    // Projector Function
+    function projectPoint(lat, lng) {
+        const point = map.latLngToLayerPoint(new L.LatLng(lat, lng));
+        return point;
+    }
+    
+    function renderDevices() {
+        devices.forEach(function(device) {
+            var deviceLat = device.latitude;
+            var deviceLng = device.longitude;
 
-        // add marker to each device
-        if (deviceLat !== 'null' && deviceLng !== 'null') {
-            var marker = L.marker([deviceLat, deviceLng]).addTo(map)
-                .bindPopup(`<b>${device.name}</b><br>Click anywhere to stop track`)
-                .on('click', function () {
-                    if (activeDeviceId !== device.id) {
-                        // Stop tracking the previous device's path
-                        stopPathTracking();
-                        // Start tracking the selected device's path
-                        activeDeviceId = device.id;
-                        startPathTracking(activeDeviceId);  // Begin tracking this device
-                    }
-                });
-            deviceMarkers[device.id] = marker;
+            // Add Marker for each Device
+            if (deviceLat !== 'null' && deviceLng !== 'null') {
+                if (!deviceMarkers[device.id]) {
+                    var marker = L.marker([deviceLat, deviceLng]).addTo(map)
+                        .bindPopup(`<b>${device.name}</b><br>Click anywhere to stop track`)
+                        .on('click', function () {
+                            if (activeDeviceId !== device.id && currentMode === 'tracking') {
+                                // Stop tracing before
+                                stopPathTracking();
+                                // Start tracking
+                                activeDeviceId = device.id;
+                                startPathTracking(activeDeviceId);  
+                            }
+                        });
+                    deviceMarkers[device.id] = marker;
+                } else {
+                    deviceMarkers[device.id].setLatLng([deviceLat, deviceLng]);
+                }
+            }
+        });
+    }
+
+    // Stop Tracking
+    map.on('click', function () {
+        if (currentMode === 'tracking') {
+            stopPathTracking();
         }
     });
 
-    // Click on the map to stop tracking
-    map.on('click', function () {
-        stopPathTracking();  // Stop path tracking when clicking on the map
-    });
-
-    // start tracking func
+    // Start Tracking
     function startPathTracking(deviceId) {
         console.log(`Start tracking device ${deviceId}`);
         activeDeviceId = deviceId;
@@ -141,91 +238,246 @@
         drawDevicePath(deviceId);
         trackPathInterval = setInterval(function () {
             updateDevicePositions();
-            drawDevicePath(deviceId);  // Update the path in real-time
-        }, 5000);  // update every 5s
+            drawDevicePath(deviceId);  
+        }, 2000); 
     }
-
-    // stop tracking func
+    
     function stopPathTracking() {
         if (activeDeviceId !== null) {
             console.log(`Stop tracking device ${activeDeviceId}`);
-            // stop
             clearInterval(trackPathInterval);
 
-            // Remove path if exists
+            // Remove Path Drawing 
             if (deviceMarkers[activeDeviceId].polyline) {
                 map.removeLayer(deviceMarkers[activeDeviceId].polyline);
                 deviceMarkers[activeDeviceId].polyline = null;
             }
 
             activeDeviceId = null;
-            // Restart global update interval
-            globalUpdateInterval = setInterval(updateDevicePositions, 5000);
+            // Restart Global Update
+            globalUpdateInterval = setInterval(updateDevicePositions, 2000);
         }
     }
 
-    // draw device function
+    // Draw Path
     function drawDevicePath(deviceId) {
-        fetch(`/device-path/${deviceId}/?full_path=true`)  // provide path
+        fetch(`/device-path/${deviceId}/?full_path=true`)  // Fetch Path
             .then(response => response.json())
             .then(data => {
                 var pathCoordinates = data.path.map(function(point) {
                     return [point.latitude, point.longitude];
                 });
 
-                // Remove old path and draw new path
+                // Redraw
                 if (deviceMarkers[deviceId].polyline) {
                     map.removeLayer(deviceMarkers[deviceId].polyline);
                 }
                 deviceMarkers[deviceId].polyline = L.polyline(pathCoordinates, { color: 'blue' }).addTo(map);
-                map.fitBounds(deviceMarkers[deviceId].polyline.getBounds());  // Zoom to path
+                map.fitBounds(deviceMarkers[deviceId].polyline.getBounds());  
             })
             .catch(error => console.error("Error fetching device path:", error));
     }
 
-    // Polling function to update all devices' latest positions
+    // Update to newest Location
     function updateDevicePositions() {
         devices.forEach(function(device) {
-            fetch(`/device-path/${device.id}/`)  // Reusing device path API to get the latest position
+            fetch(`/device-path/${device.id}/`) 
                 .then(response => response.json())
                 .then(data => {
                     if (deviceMarkers[device.id]) {
-                        console.log('Devices location update successfully.');
                         var marker = deviceMarkers[device.id];
                         var newLatLng = new L.LatLng(data.latitude, data.longitude);
-                        marker.setLatLng(newLatLng);  // Update the marker position
+                        marker.setLatLng(newLatLng); 
+                        
+                        device.latitude = data.latitude;
+                        device.longitude = data.longitude;
                     }
                 })
                 .catch(error => console.error('Error updating device positions:', error));
         });
+        
+        if (currentMode === 'signal') {
+            fetchMeshNetwork();
+        }
     }
     
-    // Polling for device position updates every 5 seconds
-    globalUpdateInterval = setInterval(updateDevicePositions, 5000);
+    globalUpdateInterval = setInterval(updateDevicePositions, 2000);
 
-    // ---------------- TEST PURPOSE ----------------
-    var isSimulating = false;  // To track the simulation state
-    var simulateInterval = null;  // To store the interval ID
+    // ---------------- Mesh Network Visualization ----------------
+    // Update Node and Link
+    function fetchMeshNetwork() {
+        fetch(`/mesh-network-data/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.nodes && data.links) {
+                    nodes = data.nodes;
+                    links = data.links;
+                    updateMeshNetwork();
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching mesh network data:', error);
+            });
+    }
+    
+    function updateMeshNetwork() {
+        // Clear Link and Label
+        g.selectAll(".link").remove();
+        g.selectAll(".link-label").remove();
+        
+        const linkSelection = g.selectAll(".link")
+            .data(links, d => `${d.source}-${d.target}`);
+
+        // New Lin  
+        linkSelection.enter()
+            .append("line")
+            .attr("class", "link")
+            .attr("stroke", d => {
+                const stnr = d.stnr;
+                return stnr > 120 ? "green" : stnr > 60 ? "orange" : "red";
+            })
+            .attr("stroke-width", 2)
+            .attr("marker-end", "url(#arrowhead)")
+            .attr("x1", d => {
+                const sourceNode = nodes.find(node => node.id === d.source);
+                if (!sourceNode) return null; 
+                const point = projectPoint(sourceNode.latitude, sourceNode.longitude);
+                return point.x;
+            })
+            .attr("y1", d => {
+                const sourceNode = nodes.find(node => node.id === d.source);
+                if (!sourceNode) return null;
+                const point = projectPoint(sourceNode.latitude, sourceNode.longitude);
+                return point.y;
+            })
+            .attr("x2", d => {
+                const targetNode = nodes.find(node => node.id === d.target);
+                if (!targetNode) return null;
+                const point = projectPoint(targetNode.latitude, targetNode.longitude);
+                return point.x;
+            })
+            .attr("y2", d => {
+                const targetNode = nodes.find(node => node.id === d.target);
+                if (!targetNode) return null;
+                const point = projectPoint(targetNode.latitude, targetNode.longitude);
+                return point.y;
+            })
+            .on("mouseover", function(event, d) {
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                tooltip.html(`STNR: ${d.stnr}`)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", function(event, d) {
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+        // Line label here
+        const linkLabelSelection = g.selectAll(".link-label")
+            .data(links, d => `${d.source}-${d.target}`);
+
+        linkLabelSelection.enter()
+            .append("text")
+            .attr("class", "link-label")
+            .text(d => d.stnr)
+            .attr("x", d => {
+                const sourceNode = nodes.find(node => node.id === d.source);
+                const targetNode = nodes.find(node => node.id === d.target);
+                if (!sourceNode || !targetNode) return null;
+                const sourcePoint = projectPoint(sourceNode.latitude, sourceNode.longitude);
+                const targetPoint = projectPoint(targetNode.latitude, targetNode.longitude);
+                return (sourcePoint.x + targetPoint.x) / 2;
+            })
+            .attr("y", d => {
+                const sourceNode = nodes.find(node => node.id === d.source);
+                const targetNode = nodes.find(node => node.id === d.target);
+                if (!sourceNode || !targetNode) return null;
+                const sourcePoint = projectPoint(sourceNode.latitude, sourceNode.longitude);
+                const targetPoint = projectPoint(targetNode.latitude, targetNode.longitude);
+                return (sourcePoint.y + targetPoint.y) / 2 - 10; 
+            })
+            .attr("text-anchor", "middle")
+            .attr("alignment-baseline", "middle")
+            .attr("font-size", "12px")
+            .attr("fill", "black");
+        
+        renderSinkNode();
+    }
+
+    // Zoo and Move Update Function
+    map.on("moveend", function() {
+        if (currentMode === 'signal') {
+            updateMeshNetwork();
+        }
+    });
+    map.on("zoomend", function() {
+        if (currentMode === 'signal') {
+            updateMeshNetwork();
+        }
+    });
+
+    // Switch Toggle
+    function switchToTracking() {
+        currentMode = 'tracking';
+        
+        document.getElementById('tracking-btn').style.backgroundColor = 'blue';
+        document.getElementById('signal-btn').style.backgroundColor = 'gray';
+        
+        g.selectAll(".link").remove();
+        g.selectAll(".link-label").remove();
+        
+        if (sinkMarker) {
+            map.removeLayer(sinkMarker);
+            sinkMarker = null;
+        }
+        
+        if (activeDeviceId !== null) {
+            startPathTracking(activeDeviceId);
+        }
+    }
+
+    // Toggle to Signal
+    function switchToSignal() {
+        currentMode = 'signal';
+        
+        document.getElementById('tracking-btn').style.backgroundColor = 'gray';
+        document.getElementById('signal-btn').style.backgroundColor = 'blue';
+        
+        stopPathTracking();
+
+        fetchMeshNetwork();
+    }
+    
+    renderDevices();
+    updateDevicePositions();
+
+    // Default to Tracking
+    switchToTracking();
+
+    // ---------------- Simulation (Decrypt) ----------------
+    var isSimulating = false;  
+    var simulateInterval = null; 
 
     function toggleSimulation() {
         var simulateBtn = document.getElementById("simulate-btn");
 
         if (isSimulating) {
-            // Stop the simulation
-            clearInterval(simulateInterval);  // Stop the interval
+            clearInterval(simulateInterval); 
             simulateBtn.textContent = "Start Simulation";
             isSimulating = false;
         } else {
-            // Start the simulation
-            simulateInterval = setInterval(simulateDeviceMovement, 5000);  // Polling every 5 seconds
+            simulateInterval = setInterval(simulateDeviceMovement, 2000);
             simulateBtn.textContent = "Stop Simulation";
             isSimulating = true;
         }
     }
-
-    // Polling function to simulate device movement every 5 seconds
+    
     function simulateDeviceMovement() {
-        fetch('/simulate-device-movement/')  // call API
+        fetch('/simulate-device-movement/') 
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {

@@ -135,14 +135,18 @@ def mesh_network_data(request):
                 # add 'sink' node
                 nodes.append({
                     'id': '00000',
-                    'name': 'ACME'
+                    'name': 'ACME',
+                    'latitude': 40.798224,
+                    'longitude': -77.857236
                 })
 
                 # add all device as node
                 for device in devices:
                     nodes.append({
                         'id': device.hardware_id,
-                        'name': device.name
+                        'name': device.name,
+                        'latitude': device.data.last().latitude,
+                        'longitude': device.data.last().longitude
                     })
 
                 for connection in mesh_connections:
