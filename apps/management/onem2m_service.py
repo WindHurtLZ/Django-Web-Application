@@ -1,4 +1,6 @@
 import logging
+import threading
+import time
 import uuid
 import requests
 
@@ -107,7 +109,7 @@ def register_device_ae(device):
         "m2m:ae": {
             "rn": ae_rn,
             "api": ae_api,
-            "rr": True,
+            "rr": False,
             "srv": settings.ONE_M2M_AE_SRVS,
             "nl": node_ri,
         }
@@ -122,6 +124,11 @@ def register_device_ae(device):
                 logger.warning(f"Device AE already exists: {response.status_code}, {response.text}")
             else:
                 logger.info("Device AE successfully registered")
+
+                if create_polling_channel(cse_url, ae_rn, originator):
+                    logger.info(f"Polling Channel created for AE '{ae_rn}'")
+                else:
+                    logger.error(f"Failed to create Polling Channel for AE '{ae_rn}'")
 
                 # Step 2: Create Module Resource for AE
                 modules = ['lock', 'bikeData', "meshConnectivity", "battery"]
@@ -157,6 +164,7 @@ def register_device_ae(device):
                         logger.error(f"Failed to create module '{module}' for Device Node '{node_rn}'")
 
                 # Step 6: Create Resource for dmAgent
+                ae_ri = f"C{device.hardware_id}"
                 module = 'reboot'
                 rs_url = f"{node_rn}/flexNode/dmAgent"
                 if create_module(cse_url, rs_url, module, "CAdmin"):
@@ -164,7 +172,8 @@ def register_device_ae(device):
 
                     sub_url = f"{cse_url}/{rs_url}/{module}"
                     sub_rn = f"sub_{module}"
-                    if create_subscription(sub_url, sub_rn, "CAdmin", settings.ONE_M2M_NOTIFICATIONS_URL):
+
+                    if create_subscription_with_pch_verification(sub_url, sub_rn, "CAdmin", ae_ri, cse_url, ae_rn):
                         logger.info(f"Subscription created for '{module}' of Node '{node_rn}'")
                     else:
                         logger.error(f"Failed to create subscription for '{module}' of Node '{node_rn}'")
@@ -173,13 +182,13 @@ def register_device_ae(device):
 
                 # Step 7: Create Resource for dmFirmware
                 module = 'updateFirmware'
-                rs_url = f"{node_rn}/flexNode/dmFirmware"
                 if create_module(cse_url, rs_url, module, "CAdmin"):
                     logger.info(f"Action '{module}' created for Device Node '{node_rn}'")
 
                     sub_url = f"{cse_url}/{rs_url}/{module}"
                     sub_rn = f"sub_{module}"
-                    if create_subscription(sub_url, sub_rn, "CAdmin", settings.ONE_M2M_NOTIFICATIONS_URL):
+
+                    if create_subscription_with_pch_verification(sub_url, sub_rn, "CAdmin", ae_ri, cse_url, ae_rn):
                         logger.info(f"Subscription created for '{module}' of Node '{node_rn}'")
                     else:
                         logger.error(f"Failed to create subscription for '{module}' of Node '{node_rn}'")
@@ -197,41 +206,150 @@ def register_device_ae(device):
         logger.error(f"Exception occur during Device AE registration: {e}")
         return False, None, None
 
-def create_container(cse_url, ae_rn, container_rn, originator):
+def create_polling_channel(cse_url, ae_rn, originator):
 
-    container_url = f"{cse_url}/{ae_rn}"
+    channel_url = f"{cse_url}/{ae_rn}"
     request_identifier = generate_request_identifier()
 
     headers = {
         "X-M2M-Origin": originator,
         "X-M2M-RI": request_identifier,
         "X-M2M-RVI": "3",
-        "Content-Type": "application/json;ty=3",
+        "Content-Type": "application/json;ty=15",
         "Accept": "application/json",
     }
 
     data = {
-        "m2m:cnt": {
-            "rn": container_rn,
+        "m2m:pch": {
+            "rn": "pch",
+            'rqag': False,
         }
     }
 
+
     try:
-        response = requests.post(container_url, headers=headers, json=data, timeout=10)
+        response = requests.post(channel_url, headers=headers, json=data, timeout=10)
         logger.debug(f"Received response for container creation: {response.status_code}, {response.text}")
         if response.status_code in [200, 201, 403, 409]:
             if response.status_code in [403, 409]:
-                logger.warning(f"Container '{container_rn}' already exists: {response.status_code}, {response.text}")
+                logger.warning(f"Polling Channel already exists: {response.status_code}, {response.text}")
             else:
-                logger.info(f"Container '{container_rn}' successfully created")
+                logger.info(f"Polling Channel successfully created")
             return True
         else:
-            logger.error(f"Container '{container_rn}' failed to create: {response.status_code}, {response.text}")
+            logger.error(f"Polling Channel failed to create: {response.status_code}, {response.text}")
             return False
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Exception occur during Container creation: {e}")
         return False
+
+def create_subscription_with_pch_verification(sub_url, sub_rn, originator, ae_originator, cse_url, ae_rn):
+    request_identifier = generate_request_identifier()
+
+    # Start a thread to poll the PCU and handle the verification
+    verification_thread = threading.Thread(
+        target=poll_pcu_and_verify_subscription,
+        args=(cse_url, ae_rn, ae_originator)
+    )
+    verification_thread.start()
+
+    # Wait a moment to ensure that the polling is ready
+    time.sleep(0.5)
+
+    # Create the subscription
+    headers = {
+        "X-M2M-Origin": originator,  # 'CAdmin' or similar
+        "X-M2M-RI": request_identifier,
+        "X-M2M-RVI": "3",
+        "Content-Type": "application/json;ty=23",  # ty=23 Subscription
+        "Accept": "application/json",
+    }
+
+    data = {
+        "m2m:sub": {
+            "rn": sub_rn,
+            "nu": [ae_originator],  # Set to AE's originator
+            "nct": 1,
+            "enc": {
+                "net": [1],
+            },
+            "su": ae_originator  # Subscriber URI for verification
+        }
+    }
+
+    try:
+        response = requests.post(sub_url, headers=headers, json=data, timeout=10)
+        logger.debug(f"Subscription response: {response.status_code}, {response.text}")
+        if response.status_code in [200, 201, 202]:
+            logger.info(f"Subscription '{sub_url}' created successfully")
+            # Wait for the verification to complete
+            verification_thread.join()
+            return True
+        else:
+            logger.error(f"Failed to create subscription '{sub_url}': {response.status_code}, {response.text}")
+            verification_thread.join()
+            return False
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Exception occurred during subscription creation: {e}")
+        verification_thread.join()
+        return False
+
+def poll_pcu_and_verify_subscription(cse_url, ae_rn, ae_originator, timeout=10):
+    pcu_url = f"{cse_url}/{ae_rn}/pch/pcu"
+    headers = {
+        "X-M2M-Origin": ae_originator,
+        "X-M2M-RI": generate_request_identifier(),
+        "X-M2M-RVI": "3",
+        "Accept": "application/json",
+    }
+
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            response = requests.get(pcu_url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                notification = response.json()
+                # Process the notification
+                rqp = notification.get('m2m:rqp', {})
+                rqi = rqp.get('rqi')
+                if rqi:
+                    # Send back the verification response
+                    headers = {
+                        "X-M2M-Origin": ae_originator,
+                        "X-M2M-RI": generate_request_identifier(),
+                        "X-M2M-RVI": "3",
+                        "Accept": "application/json",
+                    }
+                    data = {
+                        'm2m:rsp': {
+                            'fr': ae_originator,
+                            'rqi': rqi,
+                            'rvi': '3',
+                            'rsc': 2000  # RC_OK
+                        }
+                    }
+                    response = requests.post(pcu_url, headers=headers, json=data, timeout=10)
+                    if response.status_code == 200:
+                        logger.info(f"Verification response sent successfully for rqi: {rqi}")
+                        return
+                    else:
+                        logger.error(f"Failed to send verification response: {response.status_code}, {response.text}")
+                        return
+                else:
+                    logger.error("No 'rqi' found in notification")
+                    return
+            elif response.status_code == 204:
+                # No content, continue polling
+                time.sleep(1)
+            else:
+                logger.error(f"Failed to retrieve notification from PCU: {response.status_code}, {response.text}")
+                time.sleep(1)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Exception occurred during polling PCU: {e}")
+            time.sleep(1)
+
+    logger.error("Timeout while polling PCU for verification request")
 
 def create_subscription(sub_url, sub_rn, originator, notification_url):
 
