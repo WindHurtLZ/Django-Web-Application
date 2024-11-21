@@ -23,6 +23,9 @@ class Device(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='inactive')
     location = models.CharField(max_length=100)
     type = models.CharField(max_length=50)
+    # New fields for firmware versions
+    lte_firmware_version = models.CharField(max_length=50, default="v1.0.0")
+    dectnr_firmware_version = models.CharField(max_length=50, default="v1.0.0")
 
     def __str__(self):
         return "%s: %s" % (self.owner, self.name)
@@ -51,3 +54,22 @@ class Device(models.Model):
     def __str__(self):
         return "%s: %s" % (self.owner, self.name)
 
+class Firmware(models.Model):
+    DEVICE_TYPE_CHOICES = [
+        ('LTE', 'LTE'),
+        ('DECT_NR', 'DECT_NR'),
+    ]
+    version = models.CharField(max_length=50)
+    device_type = models.CharField(max_length=20, choices=DEVICE_TYPE_CHOICES)
+    file = models.FileField(upload_to='firmware/')
+    upload_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('version', 'device_type')
+
+    def __str__(self):
+        return f"{self.device_type} Firmware v{self.version}"
+
+    def get_download_url(self):
+        # return URL for device to download
+        return self.file.url
