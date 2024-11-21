@@ -155,7 +155,7 @@ def register_device_ae(device):
                     logger.error(f"Failed to create parent module class 'flexNode' for AE '{ae_rn}'")
 
                 # Step 5: Create Module for Device Management
-                modules = ['dmAgent', 'dmFirmware']
+                modules = ['dmAgent', 'dmFirmware_lte', 'dmFirmware_dectnr']
                 rs_url = f"{node_rn}/flexNode"
                 for module in modules:
                     if create_module(cse_url, rs_url, module, "CAdmin"):
@@ -181,20 +181,22 @@ def register_device_ae(device):
                     logger.error(f"Failed to create Action '{module}' for Device Node '{node_rn}'")
 
                 # Step 7: Create Resource for dmFirmware
+                parents = ['dmFirmware_lte', 'dmFirmware_dectnr']
                 module = 'updateFirmware'
-                if create_module(cse_url, rs_url, module, "CAdmin"):
-                    logger.info(f"Action '{module}' created for Device Node '{node_rn}'")
+                for parent in parents:
+                    rs_url = f"{node_rn}/flexNode/{parent}"
+                    if create_module(cse_url, rs_url, module, "CAdmin"):
+                        logger.info(f"Action '{module}' created for Device Resource '{parent}'")
 
-                    sub_url = f"{cse_url}/{rs_url}/{module}"
-                    sub_rn = f"sub_{module}"
+                        sub_url = f"{cse_url}/{rs_url}/{module}"
+                        sub_rn = f"sub_{module}"
 
-                    if create_subscription_with_pch_verification(sub_url, sub_rn, "CAdmin", ae_ri, cse_url, ae_rn):
-                        logger.info(f"Subscription created for '{module}' of Node '{node_rn}'")
+                        if create_subscription_with_pch_verification(sub_url, sub_rn, "CAdmin", ae_ri, cse_url, ae_rn):
+                            logger.info(f"Subscription created for '{module}' of Device Resource '{parent}'")
+                        else:
+                            logger.error(f"Failed to create subscription for '{module}' of Device Resource '{parent}'")
                     else:
-                        logger.error(f"Failed to create subscription for '{module}' of Node '{node_rn}'")
-                else:
-                    logger.error(f"Failed to create Action '{module}' for Device Node '{node_rn}'")
-
+                        logger.error(f"Failed to create Action '{module}' for Device Resource '{parent}'")
 
             return True, ae_rn, originator
 
@@ -225,7 +227,6 @@ def create_polling_channel(cse_url, ae_rn, originator):
             'rqag': False,
         }
     }
-
 
     try:
         response = requests.post(channel_url, headers=headers, json=data, timeout=10)
@@ -471,8 +472,9 @@ def create_module(cse_url, rs_url, module_rn, originator):
     cnd_type = module_info["cnd_type"]
     domain = module_info["domain"]
     type_ = module_info["type"]
+    full_name = module_info["full_name"]
 
-    cnd = f"org.{domain}.{cnd_type}.{type_}.{module_rn}"
+    cnd = f"org.{domain}.{cnd_type}.{type_}.{full_name}"
 
     headers = {
         "X-M2M-Origin": originator,

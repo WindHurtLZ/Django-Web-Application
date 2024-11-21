@@ -70,6 +70,32 @@ MODULE_MAPPING = {
         "domain": "onem2m",
         "type": "moduleclass"
     },
+    "dmFirmware_lte": {
+        "full_name": "dmFirmware",
+        "short_name": "mad:dmFie",
+        "attributes": {
+            "mulFe": False,
+            "priSe": 1,
+            "priNe": "LTE primary firmware name",
+            "priVn": "LTE primary firmware version"
+        },
+        "cnd_type": "management",
+        "domain": "onem2m",
+        "type": "moduleclass"
+    },
+    "dmFirmware_dectnr": {
+        "full_name": "dmFirmware",
+        "short_name": "mad:dmFie",
+        "attributes": {
+            "mulFe": False,
+            "priSe": 1,
+            "priNe": "DectNR+ primary firmware name",
+            "priVn": "DectNR+ primary firmware version"
+        },
+        "cnd_type": "management",
+        "domain": "onem2m",
+        "type": "moduleclass"
+    },
     "dmFirmwareAnnc": {
         "short_name": "mad:dmFieAnnc",
         "attributes": {},
@@ -82,6 +108,8 @@ MODULE_MAPPING = {
         "short_name": "mad:updFe",
         "attributes": {
             "dgt": None,
+            "url": None,
+            "versn": None,
             "resut": "New Resource"
         },
         "cnd_type": "management",
@@ -230,6 +258,7 @@ def get_current_timestamp():
 
 def get_module_mapping(module_name):
     default_mapping = {
+        "full_name": module_name,
         "short_name": module_name,
         "attributes": {},
         "cnd_type": "management",
