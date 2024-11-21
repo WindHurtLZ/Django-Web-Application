@@ -9,8 +9,8 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from apps.management.forms import DeviceForm
-from apps.management.models import Device
+from apps.management.forms import DeviceForm, FirmwareUploadForm
+from apps.management.models import Device, Firmware
 from apps.management.onem2m_service import logger, generate_request_identifier
 from apps.widgets.models import DeviceData, MeshConnectivity, Battery
 from core import settings
@@ -40,10 +40,14 @@ def device(request):
 
     form = DeviceForm()
     user_devices = Device.objects.filter(owner=request.user)
+    lte_firmwares = Firmware.objects.filter(device_type='LTE')
+    dectnr_firmwares = Firmware.objects.filter(device_type='DECT_NR')
     context = {
         'devices': user_devices,
         'form': form,
         'ONE_M2M_CSE_URL': settings.ONE_M2M_CSE_URL,
+        'lte_firmwares': lte_firmwares,
+        'dectnr_firmwares': dectnr_firmwares,
     }
 
     return render(request, 'management/device.html', context)
@@ -74,7 +78,6 @@ def delete_device(request):
             devices_to_delete = Device.objects.filter(id__in=device_ids_list, owner=request.user)
             devices_to_delete.delete()
     return redirect('device')
-
 
 @login_required
 @superuser_required
@@ -242,3 +245,206 @@ def process_battery_level(data):
         logger.info(f"BatteryLevel updated for device '{device.name}': {data}")
     else:
         logger.warning(f"No 'battery_level' found in battery data: {data}")
+
+# -----------------------------Firmware Update----------------------------------------
+
+@login_required
+@superuser_required
+def firmware_list(request):
+    lte_firmwares = Firmware.objects.filter(device_type='LTE').order_by('-upload_date')
+    dectnr_firmwares = Firmware.objects.filter(device_type='DECT_NR').order_by('-upload_date')
+
+    context = {
+        'lte_firmwares': lte_firmwares,
+        'dectnr_firmwares': dectnr_firmwares,
+    }
+    return render(request, 'management/firmware_list.html', context)
+
+@login_required
+@superuser_required
+def upload_firmware(request):
+    if request.method == 'POST':
+        form = FirmwareUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('firmware_list')
+    else:
+        form = FirmwareUploadForm()
+    return render(request, 'management/upload_firmware.html', {'form': form})
+
+@login_required(login_url="/login/")
+@superuser_required
+def delete_firmware(request):
+    if request.method == 'POST':
+        firmware_ids = request.POST.get('firmware_ids')
+        if firmware_ids:
+            firmware_ids_list = firmware_ids.split(',')
+            firmwares_to_delete = Firmware.objects.filter(id__in=firmware_ids_list)
+            # Optionally, you can log the deletion or perform additional checks here
+            firmwares_to_delete.delete()
+            logger.info(request, f"Successfully deleted {firmwares_to_delete.count()} firmware(s).")
+        else:
+            logger.error(request, "No firmware selected for deletion.")
+    return redirect('firmware_list')
+
+
+@login_required
+@superuser_required
+def update_device_firmware(request):
+    if request.method == 'POST':
+        device_ids_str = request.POST.get('device_ids')
+        if device_ids_str:
+            device_ids = device_ids_str.split(',')
+        else:
+            device_ids = []
+
+        action = request.POST.get('action')
+        lte_firmware_id = request.POST.get('lte_firmware_id')
+        dectnr_firmware_id = request.POST.get('dectnr_firmware_id')
+
+        devices = Device.objects.filter(id__in=device_ids)
+
+        lte_firmware = Firmware.objects.get(id=lte_firmware_id) if lte_firmware_id else None
+        dectnr_firmware = Firmware.objects.get(id=dectnr_firmware_id) if dectnr_firmware_id else None
+
+        if action == 'reboot':
+            send_reboot_command(devices)
+        elif action == 'update_firmware':
+            send_firmware_update_command(request, devices, lte_firmware, dectnr_firmware)
+            for device in devices:
+                if lte_firmware:
+                    device.lte_firmware_version = lte_firmware.version
+                if dectnr_firmware:
+                    device.dectnr_firmware_version = dectnr_firmware.version
+                device.save()
+
+        return redirect('device')
+    else:
+        return redirect('device')
+
+
+def send_firmware_update_command(request, devices, lte_firmware=None, dectnr_firmware=None):
+    cse_url = settings.ONE_M2M_CSE_URL
+    originator = "CAdmin"
+    request_identifier = generate_request_identifier()
+    headers = {
+        "X-M2M-Origin": originator,
+        "X-M2M-RI": request_identifier,
+        "X-M2M-RVI": "3",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    commands = []
+
+    for device in devices:
+        nod_rn = f"nod_{device.hardware_id}"
+        if lte_firmware:
+            resource_url = f"{cse_url}/{nod_rn}/flexNode/dmFirmware_lte/updateFirmware"
+            lbl = ["LTE"]
+            data = {
+                "mad:updFe": {
+                    "url": lte_firmware.get_download_url(request),
+                    "versn": lte_firmware.version,
+                    "resut": "Command Sent",
+                    "lbl": lbl
+                }
+            }
+            commands.append((resource_url, data, device))
+        if dectnr_firmware:
+            resource_url = f"{cse_url}/{nod_rn}/flexNode/dmFirmware_dectnr/updateFirmware"
+            lbl = ["DECT_NR"]
+            data = {
+                "mad:updFe": {
+                    "url": dectnr_firmware.get_download_url(request),
+                    "versn": dectnr_firmware.version,
+                    "resut": "Command Sent",
+                    "lbl": lbl
+                }
+            }
+            commands.append((resource_url, data, device))
+
+    # Send Commands
+    if commands:
+        success = True
+        for resource_url, data, device in commands:
+            try:
+                response = requests.put(resource_url, headers=headers, json=data, timeout=10)
+                if response.status_code in [200, 201]:
+                    logger.info(f"Firmware updated for device '{device.hardware_id}' using {resource_url}: {data}")
+                else:
+                    logger.error(f"Failed to update firmware for device '{device.hardware_id}' using {resource_url}: {response.status_code}, {response.text}")
+                    success = False
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Exception during firmware update for device '{device.hardware_id}' using {resource_url}: {e}")
+                success = False
+        return success
+    else:
+        logger.warning("No firmware provided for update command")
+        return False
+
+
+def send_reboot_command(device):
+    # Reboot notification to PCU
+    cse_url = settings.ONE_M2M_CSE_URL
+    nod_rn = f"nod_{device.hardware_id}"
+    command_url = f"{cse_url}/{nod_rn}/flexNode/dmAgent/reboot"
+    status_url = f"{cse_url}/{nod_rn}/flexNode/dmAgent"
+    originator = "CAdmin"
+    request_identifier = generate_request_identifier()
+
+    headers = {
+        "X-M2M-Origin": originator,
+        "X-M2M-RI": request_identifier,
+        "X-M2M-RVI": "3",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    command_data = {
+        "mad:rebot": {
+            "rebTe": 1
+        }
+    }
+
+    status_data = {
+        "mad:dmAgt": {
+            "state": 4
+        }
+    }
+
+    try:
+        response = requests.put(command_url, headers=headers,
+                                json=command_data, timeout=10)
+        if response.status_code in [200, 201]:
+            logger.info(f"Reboot command sent to device '{device.hardware_id}'")
+        else:
+            logger.error(
+                f"Failed to send reboot command to '{device.hardware_id}': {response.status_code}, {response.text}")
+            return False
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Exception during reboot command for '{device.hardware_id}': {e}")
+        return False
+
+    try:
+        response = requests.put(status_url, headers=headers, json=status_data,
+                                timeout=10)
+        if response.status_code in [200, 201]:
+            logger.info(f"Reboot status updated for device '{device.hardware_id}'")
+        else:
+            logger.error(
+                f"Failed to update reboot status for '{device.hardware_id}': {response.status_code}, {response.text}")
+            return False
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Exception during reboot status update for '{device.hardware_id}': {e}")
+        return False
+
+    try:
+        device.status = 'rebooting'
+        device.save()
+        logger.info(f"Device '{device.hardware_id}' status updated to 'rebooting'")
+    except Exception as e:
+        logger.error(f"Failed to update device status for '{device.hardware_id}': {e}")
+        return False
+
+    return True

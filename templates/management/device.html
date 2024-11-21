@@ -4,7 +4,7 @@
 {# content #}
 {% block canvas %}
     <main class="grow">
-    <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
+    <div x-data="handleSelect" class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
 
         <!-- Page header -->
         <div class="sm:flex sm:justify-between sm:items-center mb-8">
@@ -17,15 +17,25 @@
             <!-- Right: Actions -->
             <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
 
-                <!-- Delete button -->
+                <!-- Batch Actions -->
                 <div class="table-items-action hidden">
                     <div class="flex items-center">
-                        <div class="hidden xl:block text-sm italic mr-2 whitespace-nowrap"><span class="table-items-count"></span> items selected</div>
+                        <div class="hidden xl:block text-sm italic mr-2 whitespace-nowrap">
+                            <span class="table-items-count"></span> items selected
+                        </div>
+                        <!-- Batch update form -->
+                        <form id="batch-update-form" method="POST" action="#">
+                            {% csrf_token %}
+                            <input type="hidden" name="device_ids" id="batch-update-device-ids-input">
+                            <button type="button" class="btn bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-indigo-500 mr-2" @click="openBatchFirmwareModal()">
+                                Update Firmware
+                            </button>
+                        </form>
+                        <!-- Batch Delete form -->
                         <form id="delete-form" method="POST" action="{% url 'delete_device' %}">
                             {% csrf_token %}
                             <input type="hidden" name="device_ids" id="device-ids-input">
-                            <button type="button" class="btn bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-rose-500" 
-                                onclick="submitDeleteForm()">
+                            <button type="button" class="btn bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-rose-500" @click="submitDeleteForm()">
                                 Delete
                             </button>
                         </form>
@@ -164,7 +174,7 @@
             <header class="px-5 py-4">
                 <h2 class="font-semibold text-slate-800 dark:text-slate-100">All Devices <span class="text-slate-400 dark:text-slate-500 font-medium">{{ devices|length }}</span></h2>
             </header>
-            <div x-data="handleSelect">
+            <div>
 
                 <!-- Table -->
                 <div class="overflow-x-auto">
@@ -196,19 +206,19 @@
                                     <div class="font-semibold text-left">Owner</div>
                                 </th>
                                 <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="font-semibold text-left">Version</div>
-                                </th>
-                                <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
                                     <div class="font-semibold text-left">Status</div>
                                 </th>
                                 <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
                                     <div class="font-semibold">Battery</div>
                                 </th>
                                 <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="font-semibold text-left">Location</div>
+                                    <div class="font-semibold text-left">Type</div>
                                 </th>
                                 <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="font-semibold text-left">Type</div>
+                                    <div class="font-semibold text-left">LTE Firmware</div>
+                                </th>
+                                <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                                    <div class="font-semibold text-left">DECT-NR Firmware</div>
                                 </th>
                                 <th class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
                                     <span class="sr-only">Menu</span>
@@ -246,9 +256,6 @@
                                     <div class="font-medium text-slate-800 dark:text-slate-100">{{ device.owner }}</div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="text-left font-medium text-emerald-500">{{ device.version }}</div>
-                                </td>
-                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
                                     <div class="inline-flex font-medium bg-amber-100 dark:bg-amber-400/30 text-amber-600 dark:text-amber-400 rounded-full text-center px-2.5 py-0.5">
                                         {{ device.status }}</div>
                                 </td>
@@ -262,17 +269,26 @@
                                     </div>
                                 </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                                    <div class="text-left">{{ device.location }}</div>
-                                </td>
-                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
                                     <div class="flex items-center">
                                         <div>{{ device.type }}</div>
                                     </div>
                                 </td>
+                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                                    <div class="text-left">{{ device.lte_firmware_version }}</div>
+                                </td>
+                                <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                                    <div class="text-left">{{ device.dectnr_firmware_version }}</div>
+                                </td>
                                 <td class="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
                                     <div class="flex items-center">
-                                        <button class="text-slate-400 hover:text-slate-500 dark:text-slate-500 dark:hover:text-slate-400 transform" :class="{ 'rotate-180': open }" @click.prevent="open = !open" :aria-expanded="open" aria-controls="description-{{ device.id }}">
-                                            <span class="sr-only">Menu</span>
+                                        <button
+                                            class="text-slate-400 hover:text-slate-500 dark:text-slate-500 dark:hover:text-slate-400 transform"
+                                            :class="{ 'rotate-180': open }"
+                                            @click.prevent="open = !open"
+                                            :aria-expanded="open"
+                                            aria-controls="menu-{{ device.id }}"
+                                        >
+                                            <span class="sr-only">Toggle Menu</span>
                                             <svg class="w-8 h-8 fill-current" viewBox="0 0 32 32">
                                                 <path d="M16 20l-5.4-5.4 1.4-1.4 4 4 4-4 1.4 1.4z" />
                                             </svg>
@@ -281,34 +297,143 @@
                                 </td>
                             </tr>
 
-                            <tr id="description-{{ device.id }}" role="region" x-show="open" x-cloak>
-                                <td colspan="10" class="px-2 first:pl-5 last:pr-5 py-3">
-                                    <div class="flex items-center bg-slate-50 dark:bg-slate-900/30 dark:text-slate-400 p-3 -mt-3">
-                                        <svg class="w-4 h-4 shrink-0 fill-current text-slate-400 dark:text-slate-500 mr-2">
-                                            <path d="M1 16h3c.3 0 .5-.1.7-.3l11-11c.4-.4.4-1 0-1.4l-3-3c-.4-.4-1-.4-1.4 0l-11 11c-.2.2-.3.4-.3.7v3c0 .6.4 1 1 1zm1-3.6l10-10L13.6 4l-10 10H2v-1.6z" />
-                                        </svg>
-                                        <div class="italic"> {{ ONE_M2M_CSE_URL }}/{{ device.ae_rn }}/bikeData </div>
-                                        {% with ae_id_str=device.ae_id|stringformat:"s" %}
-                                        <div class="italic ml-2">C{{ device.hardware_id }}</div>
-                                        {% endwith %}
+                            <tr id="menu-{{ device.id }}" x-show="open" x-cloak>
+                                <td colspan="12" class="px-2 first:pl-5 last:pr-5 py-3">
+                                    <div class="bg-slate-50 dark:bg-slate-900/30 dark:text-slate-400 p-4 rounded">
+                                        <form method="POST" action="{% url 'update_device_firmware' %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="device_ids" value="{{ device.id }}">
+
+                                            <!-- Reboot Button -->
+                                            <button
+                                                type="submit"
+                                                name="action"
+                                                value="reboot"
+                                                class="btn bg-rose-500 hover:bg-rose-600 text-white mr-4"
+                                            >
+                                                Reboot
+                                            </button>
+
+                                            <!-- Update Firmware Button -->
+                                            <button
+                                                type="button"
+                                                @click="openFirmwareModal('{{ device.id }}')"
+                                                class="btn bg-indigo-500 hover:bg-indigo-600 text-white"
+                                            >
+                                                Update Firmware
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
+
+                            <!-- Firmware Update Modal -->
+                            <div
+                                class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-25"
+                                x-show="firmwareModalOpen === '{{ device.id }}'"
+                                @keydown.escape.window="firmwareModalOpen = null"
+                                x-cloak
+                            >
+                                <div class="bg-white dark:bg-slate-800 rounded-lg overflow-hidden w-96">
+                                    <div class="px-6 py-4">
+                                        <h2 class="text-lg font-semibold">Update Firmware for {{ device.name }}</h2>
+                                    </div>
+                                    <form method="POST" action="{% url 'update_device_firmware' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="device_ids" value="{{ device.id }}">
+                                        <input type="hidden" name="action" value="update_firmware">
+                                        <div class="px-6 py-4 space-y-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">LTE Firmware</label>
+                                                <select name="lte_firmware_id" class="form-select">
+                                                    <option value="">Do not update</option>
+                                                    {% for firmware in lte_firmwares %}
+                                                    <option value="{{ firmware.id }}">{{ firmware.version }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">DECT-NR Firmware</label>
+                                                <select name="dectnr_firmware_id" class="form-select">
+                                                    <option value="">Do not update</option>
+                                                    {% for firmware in dectnr_firmwares %}
+                                                    <option value="{{ firmware.id }}">{{ firmware.version }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-end px-6 py-4">
+                                            <button type="button" @click="firmwareModalOpen = null" class="btn mr-2">Cancel</button>
+                                            <button type="submit" class="btn bg-indigo-500 hover:bg-indigo-600 text-white">Update</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
                         </tbody>
                         {% endfor %}
                     </table>
-
                 </div>
             </div>
         </div>
+
+        <!-- Batch Firmware Update Modal -->
+        <div
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-25"
+            x-show="batchFirmwareModalOpen"
+            @keydown.escape.window="batchFirmwareModalOpen = false"
+            x-cloak
+        >
+            <div class="bg-white dark:bg-slate-800 rounded-lg overflow-hidden w-96">
+                <div class="px-6 py-4">
+                    <h2 class="text-lg font-semibold">
+                        Update Firmware for <span id="selected-device-count">0</span> Selected Device(s)
+                    </h2>
+                </div>
+                <form method="POST" action="{% url 'update_device_firmware' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="device_ids" id="batch-device-ids-input-modal">
+                    <input type="hidden" name="action" value="update_firmware">
+                    <div class="px-6 py-4 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">LTE Firmware</label>
+                            <select name="lte_firmware_id" class="form-select">
+                                <option value="">Do not update</option>
+                                {% for firmware in lte_firmwares %}
+                                <option value="{{ firmware.id }}">{{ firmware.version }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">DECT-NR Firmware</label>
+                            <select name="dectnr_firmware_id" class="form-select">
+                                <option value="">Do not update</option>
+                                {% for firmware in dectnr_firmwares %}
+                                <option value="{{ firmware.id }}">{{ firmware.version }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end px-6 py-4">
+                        <button type="button" @click="batchFirmwareModalOpen = false" class="btn mr-2">Cancel</button>
+                        <button type="submit" class="btn bg-indigo-500 hover:bg-indigo-600 text-white">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Scripts -->
         <script>
             document.addEventListener('alpine:init', () => {
                 Alpine.data('handleSelect', () => ({
                     selectall: false,
+                    firmwareModalOpen: null,
+                    batchFirmwareModalOpen: false,
                     selectAction() {
-                        countEl = document.querySelector('.table-items-action');
+                        const countEl = document.querySelector('.table-items-action');
                         if (!countEl) return;
-                        checkboxes = document.querySelectorAll('input.table-item:checked');
+                        const checkboxes = document.querySelectorAll('input.table-item:checked');
+                        
                         document.querySelector('.table-items-count').innerHTML = checkboxes.length;
                         if (checkboxes.length > 0) {
                             countEl.classList.remove('hidden');
@@ -318,8 +443,8 @@
                     },
                     toggleAll() {
                         this.selectall = !this.selectall;
-                        checkboxes = document.querySelectorAll('input.table-item');
-                        [...checkboxes].map((el) => {
+                        const checkboxes = document.querySelectorAll('input.table-item');
+                        [...checkboxes].forEach((el) => {
                             el.checked = this.selectall;
                         });
                         this.selectAction();
@@ -328,18 +453,34 @@
                         this.selectall = false;
                         document.getElementById('parent-checkbox').checked = false;
                         this.selectAction();
-                    }
-                }))
-            })
-            
-            // delete function
-            function submitDeleteForm() {
-                var checkboxes = document.querySelectorAll('input.table-item:checked');
-                var ids = Array.from(checkboxes).map(checkbox => checkbox.value); // get device ID
-                document.getElementById('device-ids-input').value = ids.join(','); // separate by , to form input
-            
-                document.getElementById('delete-form').submit();
-            }
+                    },
+                    openFirmwareModal(deviceId) {
+                        this.firmwareModalOpen = deviceId;
+                    },
+                    openBatchFirmwareModal() {
+                        const checkboxes = document.querySelectorAll('input.table-item:checked');
+                        const ids = Array.from(checkboxes).map(checkbox => checkbox.value);
+                        if (ids.length === 0) {
+                            alert("Please select at least one device.");
+                            return;
+                        }
+                        document.getElementById('batch-update-device-ids-input').value = ids.join(',');
+                        document.getElementById('batch-device-ids-input-modal').value = ids.join(',');
+                        document.getElementById('selected-device-count').textContent = ids.length;
+                        this.batchFirmwareModalOpen = true;
+                    },
+                    submitDeleteForm() {
+                        const checkboxes = document.querySelectorAll('input.table-item:checked');
+                        const ids = Array.from(checkboxes).map(checkbox => checkbox.value);
+                        if (ids.length === 0) {
+                            alert("Please select at least one device.");
+                            return;
+                        }
+                        document.getElementById('device-ids-input').value = ids.join(',');
+                        document.getElementById('delete-form').submit();
+                    },
+                }));
+            });
         </script>
 
         <!-- Pagination -->
