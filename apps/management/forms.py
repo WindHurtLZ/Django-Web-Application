@@ -1,6 +1,9 @@
 # forms.py
+import re
+
 from django import forms
-from .models import Device
+from .models import Device, Firmware
+
 
 class DeviceForm(forms.ModelForm):
     class Meta:
@@ -26,3 +29,33 @@ class DeviceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['type'].initial = 'CoAP'
+
+class FirmwareUploadForm(forms.ModelForm):
+    class Meta:
+        model = Firmware
+        fields = ['version', 'device_type', 'file']
+        widgets = {
+            'version': forms.TextInput(attrs={
+                'class': 'form-input w-full max-w-md',
+                'placeholder': 'v1.0.0',
+                'id': 'version-input',
+                'required': 'required',
+            }),
+            'device_type': forms.Select(attrs={
+                'class': 'form-select w-full max-w-md',
+                'id': 'device-type-select',
+                'required': 'required',
+            }),
+            'file': forms.FileInput(attrs={
+                'class': 'form-input w-full max-w-md',
+                'id': 'file-input',
+                'required': 'required',
+            }),
+        }
+
+    def clean_version(self):
+        version = self.cleaned_data.get('version')
+        pattern = r'^v\d+\.\d+\.\d+$'
+        if not re.match(pattern, version):
+            raise forms.ValidationError('Version must be in the format vX.X.X where X is a number.')
+        return version

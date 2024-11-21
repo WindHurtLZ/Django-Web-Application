@@ -1,5 +1,5 @@
 import uuid
-
+import requests
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -8,6 +8,7 @@ class Device(models.Model):
     STATUS_CHOICES = [
         ('active', 'Active'),
         ('inactive', 'Inactive'),
+        ('rebooting', 'Rebooting'),
         ('updating', 'Updating'),
     ]
 
@@ -70,6 +71,6 @@ class Firmware(models.Model):
     def __str__(self):
         return f"{self.device_type} Firmware v{self.version}"
 
-    def get_download_url(self):
+    def get_download_url(self, request):
         # return URL for device to download
-        return self.file.url
+        return request.build_absolute_uri(self.file.url)

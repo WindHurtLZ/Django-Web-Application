@@ -1,0 +1,50 @@
+{% extends 'layouts/base.html' %}
+
+{% block canvas %}
+<main class="grow">
+    <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-3xl">
+        <h1 class="text-2xl md:text-3xl text-slate-800 dark:text-slate-100 font-bold">Upload Firmware</h1>
+
+        <div class="mt-6">
+            <form method="post" enctype="multipart/form-data" id="upload-firmware-form">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="mb-4">
+                        {% for error in form.non_field_errors %}
+                            <div class="text-red-600">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Version Input -->
+                <div>
+                    <label class="block text-sm font-medium mb-1" for="version-input">Version</label>
+                    {{ form.version }}
+                    {{ form.version.errors }}
+                </div>
+
+                <!-- Device Type Select -->
+                <div class="mt-4">
+                    <label class="block text-sm font-medium mb-1" for="device-type-select">Device Type</label>
+                    {{ form.device_type }}
+                    {{ form.device_type.errors }}
+                </div>
+
+                <!-- Firmware File Input -->
+                <div class="mt-4">
+                    <label class="block text-sm font-medium mb-1" for="file-input">Firmware File</label>
+                    {{ form.file }}
+                    {{ form.file.errors }}
+                </div>
+
+                <!-- Submit Button -->
+                <div class="mt-6">
+                    <button type="submit" class="btn bg-indigo-500 hover:bg-indigo-600 text-white">
+                        Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+{% endblock %}
