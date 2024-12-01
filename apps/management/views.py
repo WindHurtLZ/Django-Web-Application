@@ -308,7 +308,11 @@ def update_device_firmware(request):
         dectnr_firmware = Firmware.objects.get(id=dectnr_firmware_id) if dectnr_firmware_id else None
 
         if action == 'reboot':
-            send_reboot_command(devices)
+            if devices.count() == 1:
+                device = devices.first()
+                send_reboot_command(device)
+            else:
+                return redirect('device')
         elif action == 'update_firmware':
             send_firmware_update_command(request, devices, lte_firmware, dectnr_firmware)
             for device in devices:
