@@ -271,7 +271,7 @@ def create_subscription_with_pch_verification(sub_url, sub_rn, originator, ae_or
         "m2m:sub": {
             "rn": sub_rn,
             "nu": [ae_originator],  # Set to AE's originator
-            "nct": 1,
+            "nct": 2,
             "enc": {
                 "net": [1],
             },
