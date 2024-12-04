@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+import environ
+from urllib.parse import urlparse
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,29 +26,41 @@ CORE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'django-insecure-mz4k_gu2q9*!ye%^bv(ahbd&&$7n*%-%$&8u-g83j_3u1!eq&j'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-NGROK_URL = '9472-153-33-208-36.ngrok-free.app'
+# Load Environ Config
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+environ.Env.read_env(os.path.join(Path(__file__).resolve().parent.parent, '.env'))
+
+DEBUG = env('DEBUG')
+SERVER_URL = env('SERVER_URL')
+parsed_url = urlparse(SERVER_URL)
+
+SERVER_PROTOCOL = parsed_url.scheme
+SERVER_HOST = parsed_url.hostname
+SERVER_PORT = parsed_url.port
 
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    f'{NGROK_URL}',  # ngrok
+    SERVER_HOST,
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    f'https://{NGROK_URL}',  # ngrok
+    f'{SERVER_PROTOCOL}://{SERVER_HOST}',
 ]
+if SERVER_PORT and ((SERVER_PROTOCOL == 'http' and SERVER_PORT != 80) or (SERVER_PROTOCOL == 'https' and SERVER_PORT != 443)):
+    CSRF_TRUSTED_ORIGINS.append(f'{SERVER_PROTOCOL}://{SERVER_HOST}:{SERVER_PORT}')
 
-ONE_M2M_CSE_URL = "http://98.83.180.67:8080/cse-in"
+ONE_M2M_CSE_URL = env('ONE_M2M_CSE_URL')
 ONE_M2M_ORIGINATOR = "CWebApp"
 ONE_M2M_AE_NAME = "WebApp"
-ONE_M2M_AE_API = "NWebApp" 
+ONE_M2M_AE_API = "NWebApp"
 ONE_M2M_AE_SRVS = ["3"]
-ONE_M2M_NOTIFICATIONS_URL = f"https://{NGROK_URL}/notifications/"
+ONE_M2M_NOTIFICATIONS_URL = f"{SERVER_PROTOCOL}://{SERVER_HOST}/notifications/"
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
