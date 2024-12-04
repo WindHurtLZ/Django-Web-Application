@@ -208,6 +208,42 @@ def register_device_ae(device):
         logger.error(f"Exception occur during Device AE registration: {e}")
         return False, None, None
 
+def delete_device_ae(device):
+
+    cse_url = settings.ONE_M2M_CSE_URL
+    request_identifier = generate_request_identifier()
+    ae_rn = device.ae_rn
+    ae_url = cse_url + f"/{ae_rn}"
+    nod_rn = f"nod_{device.hardware_id}"
+    nod_url = cse_url + f"/{nod_rn}"
+
+    headers = {
+        "X-M2M-Origin": "CAdmin",
+        "X-M2M-RI": request_identifier,
+        "X-M2M-RVI": "3",
+    }
+
+    data = {}
+
+    try:
+        response = requests.delete(ae_url, headers=headers, json=data, timeout=10)
+        if response.status_code in [200, 202, 204]:
+            logger.info(f"Device AE {ae_rn} successfully deleted")
+            response = requests.delete(nod_url, headers=headers, json=data, timeout=10)
+            if response.status_code in [200, 202, 204]:
+                logger.info(f"Device NOD {nod_rn} successfully deleted")
+                return True
+            else:
+                logger.error(f"Device NOD {nod_rn} failed to delete: {response.status_code}, {response.text}")
+                return False
+        else:
+            logger.error(f"Device AE {ae_rn} failed to delete: {response.status_code}, {response.text}")
+            return False
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Exception occur during AE deletion{e}")
+        return False
+
 def create_polling_channel(cse_url, ae_rn, originator):
 
     channel_url = f"{cse_url}/{ae_rn}"
@@ -390,7 +426,6 @@ def create_subscription(sub_url, sub_rn, originator, notification_url):
 
 
 def create_node(cse_url, hardware_id, originator):
-    node_url = f"{cse_url}"
     request_identifier = generate_request_identifier()
 
     headers = {
@@ -409,7 +444,7 @@ def create_node(cse_url, hardware_id, originator):
     }
 
     try:
-        response = requests.post(node_url, headers=headers, json=data, timeout=10)
+        response = requests.post(cse_url, headers=headers, json=data, timeout=10)
         logger.debug(f"Node creation response: {response.status_code}, {response.text}")
         if response.status_code in [200, 201]:
             node_info = response.json().get("m2m:nod")

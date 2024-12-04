@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from apps.management.forms import DeviceForm, FirmwareUploadForm
 from apps.management.models import Device, Firmware
-from apps.management.onem2m_service import logger, generate_request_identifier
+from apps.management.onem2m_service import logger, generate_request_identifier, delete_device_ae
 from apps.widgets.models import DeviceData, MeshConnectivity, Battery
 from core import settings
 from core.decorators import superuser_required
@@ -76,7 +76,14 @@ def delete_device(request):
         if device_ids:
             device_ids_list = device_ids.split(',')
             devices_to_delete = Device.objects.filter(id__in=device_ids_list, owner=request.user)
-            devices_to_delete.delete()
+            for device in devices_to_delete:
+                success = delete_device_ae(device)
+                if success:
+                    device.delete()
+                else:
+                    logger.error(f"Failed to delete device {device.name} from OneM2M.")
+                    device.delete()
+
     return redirect('device')
 
 @login_required
