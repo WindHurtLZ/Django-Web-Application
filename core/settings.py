@@ -33,7 +33,7 @@ env = environ.Env(
 )
 environ.Env.read_env(os.path.join(Path(__file__).resolve().parent.parent, '.env'))
 
-DEBUG = env('DEBUG')
+DEBUG = True
 SERVER_URL = env('SERVER_URL')
 parsed_url = urlparse(SERVER_URL)
 
