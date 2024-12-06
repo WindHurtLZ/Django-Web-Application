@@ -1,0 +1,31 @@
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 72.5 63.6" style="enable-background:new 0 0 72.5 63.6;" xml:space="preserve">
+ <style type="text/css">
+  .st0{fill:none;}
+	.st1{opacity:0.6;fill:#00A9CE;enable-background:new    ;}
+	.st2{opacity:0.8;fill:#00A9CE;enable-background:new    ;}
+	.st3{opacity:0.5;fill:#00A9CE;enable-background:new    ;}
+	.st4{fill:#00A9CE;}
+ </style>
+ <g id="Layer_2">
+ </g>
+ <g id="Layer_1">
+  <path class="st0" d="M35.4,28.1L35.4,28.1L35.4,28.1z">
+  </path>
+  <g>
+   <g>
+    <path class="st1" d="M52,0.4C52,0.4,51.9,0.4,52,0.4c-0.3,0.2-0.4,0.3-0.6,0.3L35.9,9.6l18,10.4V0C53.3,0,52.6,0.2,52,0.4z">
+    </path>
+    <path class="st2" d="M20.3,63.1l16.4-9.5l-18-10.4v20.3C19.2,63.6,19.7,63.4,20.3,63.1z">
+    </path>
+    <path class="st3" d="M72.3,52.5L35.4,31.2l0,0l-1.7-1L0.4,10.9C0.2,11.5,0,12.1,0,12.8c0,0.1,0,0.3,0,0.4v38.2
+				c0,1.2,0.7,2.3,1.7,2.9l15.2,8.9c0.5,0.3,1.1,0.4,1.7,0.4V44.1v-0.8l34.5,19.9c0.1,0.1,0.2,0.1,0.3,0.1h0.1
+				c1,0.4,1.8,0.1,2.7-0.5l5.8-3.3l9.2-5.5C71.7,53.7,72.1,53.1,72.3,52.5z">
+    </path>
+    <path class="st4" d="M72.5,27.3V12.8c0-1.9-1-3.6-2.6-4.5L56.5,0.6C55.7,0.2,54.8,0,53.9,0v20.1L23.8,2.6l-3.4-1.9
+				c-1.5-0.8-2.8-0.9-4.3-0.2c0,0-0.1,0-0.1,0.1c-0.2,0.1-0.3,0.2-0.5,0.3L10.2,4L2.6,8.4l0,0C1.6,9,0.8,9.9,0.3,11l33.3,19.2l1.7,1
+				l0,0l36.9,21.3c0.2-0.7,0.2-1.9,0.2-1.9V27.3H72.5z">
+    </path>
+   </g>
+  </g>
+ </g>
+</svg>

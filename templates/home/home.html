@@ -4,56 +4,75 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title> {% block title %} Enter Bike Number {% endblock %}</title>
+    <title>  BikeShare - Home </title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <link href="{% static 'css/vendors/flatpickr.min.css' %}" rel="stylesheet">
-    <link href="{% static 'style.css' %}" rel="stylesheet">
-    <title>Home</title>
-    <style>
-        body, html {
-            height: 100%;
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-
-        .blur-background {
-            background: url('https://meshmerize.net/wp-content/uploads/2022/11/dall-e-2022-10-24-13.45.jpg') no-repeat center center/cover;
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .blur-background::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            backdrop-filter: blur(5px);
-        }
-
-        .center-button {
-            position: relative;
-            z-index: 1;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/style3.css' %}">
 </head>
 <body>
-    <div class="blur-background">
-        <div class="center-button">
-            <a class="btn bg-indigo-500 hover:bg-indigo-600 text-white ml-auto" href="{% url "ride-1" %}">Start Ride</a>
-        </div>
-        <form method="POST" action="{% url 'logout' %}" class="center-button">
-            {% csrf_token %}
-            <button type="submit" class="font-medium text-sm text-indigo-500 flex items-center py-1 px-3">
-                Sign Out
-            </button>
-        </form>
+    div class="min-h-screen relative">
+    <!-- Background with overlay -->
+    <div class="absolute inset-0 bg-cover bg-center"
+         style="background-image: url('https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&q=80')">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
     </div>
+ 
+    <!-- Content -->
+    <div class="relative z-10 min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="p-4">
+            <nav class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 21.7C7 21.7 3 17.7 3 12.7V7.7L12 2.7L21 7.7V12.7C21 17.7 17 21.7 12 21.7Z"/>
+                        <path d="M15 9.7C15 8.6 14.1 7.7 13 7.7H11C9.9 7.7 9 8.6 9 9.7V15.7C9 16.8 9.9 17.7 11 17.7H13C14.1 17.7 15 16.8 15 15.7V9.7Z"/>
+                    </svg>
+                    <span class="text-white font-bold text-xl">BikeShare</span>
+                </div>
+                <form method="POST" action="{% url 'logout' %}" class="flex items-center">
+                    {% csrf_token %}
+                    <button type="submit" class="flex items-center space-x-2 px-4 py-2 text-white hover:bg-white/10 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        <span>Sign Out</span>
+                    </button>
+                </form>
+            </nav>
+        </header>
+ 
+        <!-- Main Content -->
+        <main class="flex-1 flex items-center justify-center p-4">
+            <div class="text-center space-y-8">
+                <div class="space-y-4">
+                    <h1 class="text-4xl md:text-5xl font-bold text-white">
+                        Ready for your ride?
+                    </h1>
+                    <p class="text-xl text-white/90">
+                        Start your journey with our bike sharing service
+                    </p>
+                </div>
+                
+                <a href="{% url 'ride-1' %}"
+                   class="inline-block px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                    Start Ride
+                </a>
+ 
+                <p class="text-white/70 text-sm">
+                    Simply click to begin your eco-friendly journey
+                </p>
+            </div>
+        </main>
+ 
+        <!-- Footer -->
+        <footer class="p-4">
+            <div class="max-w-7xl mx-auto text-center text-white/60 text-sm">
+                © {% now "Y" %} BikeShare. All rights reserved.
+            </div>
+        </footer>
+    </div>
+</div>
 </body>
 </html>
